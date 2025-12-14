@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 20,
   },
   backButton: { padding: 4 },

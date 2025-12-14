@@ -1,4 +1,3 @@
-// src/pages/Setting/SettingsPage.tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -9,7 +8,6 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
-  Switch,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
@@ -26,21 +24,15 @@ import {
 } from '../../api/profileApi';
 import { apiClient } from '../../api/config';
 import { styles } from '../../styles/Setting';
-import {
-  initializeFCM,
-  cleanupFCMToken,
-  requestNotificationPermission,
-  checkNotificationPermission,
-} from '../../utils/fcm';
 
 export default function SettingsPage() {
   const navigation = useNavigation();
   const { fontScale, updateFontScale } = useFontSize();
 
+  // State
   const [userName, setUserName] = useState('김춘자');
   const [sonjuName, setSonjuName] = useState('돌쇠');
   const [isPremium, setIsPremium] = useState(false);
-  const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [showFontSizeMenu, setShowFontSizeMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
@@ -51,23 +43,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadUserData();
-    loadNotificationStatus();
   }, []);
-
-  const loadNotificationStatus = async () => {
-    try {
-      const enabled = await AsyncStorage.getItem('notificationEnabled');
-      const hasPermission = await checkNotificationPermission();
-
-      // 권한이 있고, 설정이 활성화된 경우에만 true
-      setNotificationEnabled(enabled === 'true' && hasPermission);
-    } catch (error) {
-      console.error('알림 상태 로드 실패:', error);
-    }
-  };
 
   const loadUserData = async () => {
     try {
+      // 로컬 스토리지에서 빠르게 로드
       const localName = await AsyncStorage.getItem('userName');
       const localSonju = await AsyncStorage.getItem('sonjuName');
       const localProfile = await AsyncStorage.getItem('profileImage');
@@ -76,6 +56,7 @@ export default function SettingsPage() {
       if (localSonju) setSonjuName(localSonju);
       if (localProfile) setSelectedProfile(localProfile as '여성' | '남성');
 
+      // API에서 최신 프로필 정보 가져오기
       try {
         const profile = await getMyProfile();
         if (profile?.name) {
@@ -89,6 +70,7 @@ export default function SettingsPage() {
         console.log('API 프로필 로드 실패 (로컬 데이터 사용):', apiError);
       }
 
+      // AI 프로필 정보 가져오기
       try {
         const aiProfile = await getMyAIProfile();
         if (aiProfile?.nickname) {
@@ -100,57 +82,6 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('프로필 데이터 로드 실패:', error);
-    }
-  };
-
-  const handleToggleNotification = async (value: boolean) => {
-    try {
-      setIsLoading(true);
-
-      if (value) {
-        // 알림 켜기
-        console.log('📱 [Settings] 알림 활성화 시작');
-
-        const hasPermission = await checkNotificationPermission();
-
-        if (!hasPermission) {
-          // 권한이 없으면 권한 요청
-          const granted = await requestNotificationPermission();
-
-          if (!granted) {
-            Alert.alert(
-              '알림 권한 필요',
-              '알림을 받으시려면 설정에서 알림 권한을 허용해주세요.',
-              [{ text: '확인' }]
-            );
-            return;
-          }
-        }
-
-        // FCM 초기화 및 토큰 등록
-        const initialized = await initializeFCM();
-
-        if (initialized) {
-          await AsyncStorage.setItem('notificationEnabled', 'true');
-          setNotificationEnabled(true);
-          Alert.alert('성공', '알림이 활성화되었습니다');
-        } else {
-          Alert.alert('오류', '알림 설정에 실패했습니다');
-        }
-      } else {
-        // 알림 끄기
-        console.log('🔕 [Settings] 알림 비활성화 시작');
-
-        await cleanupFCMToken();
-        await AsyncStorage.setItem('notificationEnabled', 'false');
-        setNotificationEnabled(false);
-        Alert.alert('완료', '알림이 비활성화되었습니다');
-      }
-    } catch (error: any) {
-      console.error('❌ [Settings] 알림 토글 실패:', error);
-      Alert.alert('오류', '알림 설정 변경에 실패했습니다');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -282,9 +213,6 @@ export default function SettingsPage() {
             setIsLoading(true);
             console.log('🔄 로그아웃 시작');
 
-            // FCM 토큰 정리
-            await cleanupFCMToken();
-
             await AsyncStorage.multiRemove([
               'userToken',
               'idToken',
@@ -302,9 +230,15 @@ export default function SettingsPage() {
             console.log('✅ API 헤더 정리 완료');
 
             await new Promise((resolve) => setTimeout(resolve, 100));
-            console.log('✅ 로그아웃 완료');
+            console.log('✅ 로그아웃 완료 - RootNavigator가 자동으로 화면 전환');
           } catch (error) {
             console.error('❌ 로그아웃 처리 중 오류:', error);
+            try {
+              await AsyncStorage.clear();
+              delete apiClient.defaults.headers.common.Authorization;
+            } catch (clearError) {
+              console.error('❌ 강제 정리 실패:', clearError);
+            }
             Alert.alert('알림', '로그아웃되었습니다');
           } finally {
             setIsLoading(false);
@@ -326,10 +260,6 @@ export default function SettingsPage() {
           onPress: async () => {
             try {
               setIsLoading(true);
-
-              // FCM 토큰 정리
-              await cleanupFCMToken();
-
               await deleteMyAccount();
               await AsyncStorage.clear();
               delete apiClient.defaults.headers.common.Authorization;
@@ -360,8 +290,8 @@ export default function SettingsPage() {
 
   const getProfileImage = () => {
     return selectedProfile === '여성'
-      ? require('../../../assets/images/춘자.png')
-      : require('../../../assets/images/춘돌.png');
+      ? require('../../../assets/images/choonja.png')
+      : require('../../../assets/images/choondol.png');
   };
 
   return (
@@ -380,10 +310,10 @@ export default function SettingsPage() {
             style={styles.backButton}
           >
             <Image
-              source={require('../../../assets/images/leftarrow.png')}
-              style={styles.backIcon}
-              resizeMode="contain"
-            />
+                source={require('../../../assets/images/leftarrow.png')}
+                style={styles.backIcon}
+                resizeMode="contain"
+              />
           </TouchableOpacity>
           <ScaledText fontSize={20} style={styles.headerTitle}>
             설정
@@ -464,30 +394,6 @@ export default function SettingsPage() {
               <Icon name="chevron-forward" size={20} color="#666" />
             </View>
           </TouchableOpacity>
-        </View>
-
-        {/* 알림 섹션 (새로 추가) */}
-        <View style={styles.section}>
-          <ScaledText fontSize={18} style={styles.sectionTitle}>
-            알림
-          </ScaledText>
-
-          <View style={styles.menuItem}>
-            <ScaledText fontSize={16} style={styles.menuLabel}>
-              푸시 알림
-            </ScaledText>
-            <Switch
-              value={notificationEnabled}
-              onValueChange={handleToggleNotification}
-              trackColor={{ false: '#D1D5DB', true: '#02BFDC' }}
-              thumbColor="#FFFFFF"
-              disabled={isLoading}
-            />
-          </View>
-
-          <ScaledText fontSize={12} style={styles.notificationDescription}>
-            손주가 새로운 소식을 전할 때 알림을 받을 수 있습니다
-          </ScaledText>
         </View>
 
         {/* 프리미엄 섹션 */}
@@ -782,7 +688,7 @@ export default function SettingsPage() {
                 onPress={() => setSelectedProfile('여성')}
               >
                 <Image
-                  source={require('../../../assets/images/춘자.png')}
+                  source={require('../../../assets/images/choonja.png')}
                   style={styles.profileOptionImage}
                 />
                 <ScaledText fontSize={16} style={styles.profileOptionText}>
@@ -801,7 +707,7 @@ export default function SettingsPage() {
                 onPress={() => setSelectedProfile('남성')}
               >
                 <Image
-                  source={require('../../../assets/images/춘돌.png')}
+                  source={require('../../../assets/images/choondol.png')}
                   style={styles.profileOptionImage}
                 />
                 <ScaledText fontSize={16} style={styles.profileOptionText}>
