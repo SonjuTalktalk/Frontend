@@ -1,9 +1,11 @@
+// src/pages/Auth/LoginScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onboardingStyles as s } from '../../styles/Template';
 import { CognitoUserPool, CognitoUser, AuthenticationDetails } from 'amazon-cognito-identity-js';
 import { apiClient } from '../../api/config';
+import { initializeFCM, checkNotificationPermission } from '../../utils/fcm';
 
 const myPoolData = {
   UserPoolId: 'ap-northeast-1_Frx61b697',
@@ -70,11 +72,11 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
 
     try {
-      // 1. Cognito 로그인 → accessToken 받기
+      // 1. Cognito 로그인
       const accessToken = await logIn('+82' + phone.substring(1), password, myPoolData);
       console.log('✅ [LoginScreen] Cognito 로그인 성공');
 
-      // 2. 즉시 axios 헤더에 토큰 설정
+      // 2. API 클라이언트 헤더 설정
       apiClient.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
       console.log('✅ [LoginScreen] API 클라이언트 헤더 설정 완료');
 
@@ -83,38 +85,41 @@ export default function LoginScreen({ navigation }: any) {
       await AsyncStorage.setItem('userPhone', phone);
       console.log('✅ [LoginScreen] AsyncStorage에 토큰 저장 완료');
 
-      // 4. AI 프로필 확인
+      // 4. FCM 초기화 (알림 권한이 있는 경우에만)
+      const notificationEnabled = await AsyncStorage.getItem('notificationEnabled');
+      if (notificationEnabled === 'true') {
+        const hasPermission = await checkNotificationPermission();
+        if (hasPermission) {
+          console.log('📱 [LoginScreen] FCM 초기화 시작');
+          await initializeFCM();
+        }
+      }
+
+      // 5. AI 프로필 확인
       try {
         console.log('🔍 [LoginScreen] AI 프로필 조회 시작');
         const aiProfileResponse = await apiClient.get('/ai/me');
 
         console.log('✅ [LoginScreen] AI 프로필 존재:', aiProfileResponse.data);
 
-        // AI 프로필이 있으면 저장하고 메인으로
         await AsyncStorage.setItem('aiProfile', JSON.stringify(aiProfileResponse.data));
         await AsyncStorage.setItem('hasCompletedOnboarding', 'true');
 
         console.log('✅ [LoginScreen] 온보딩 완료 처리 - 메인으로 이동');
         Alert.alert('로그인 성공', '환영합니다!');
 
-        // RootNavigator가 자동으로 Main으로 전환
-
       } catch (aiProfileError: any) {
         console.log('ℹ️ [LoginScreen] AI 프로필 없음 또는 조회 실패');
 
         if (aiProfileError.response?.status === 404) {
-          // AI 프로필이 없는 경우 → 온보딩으로
           console.log('➡️ [LoginScreen] AI 프로필 미생성 - 온보딩으로 이동');
-          navigation.navigate('SignUpSuccess');
+          navigation.navigate('NotificationPermission', { phone });
         } else {
-          // 기타 에러
           console.error('❌ [LoginScreen] AI 프로필 조회 에러:', aiProfileError);
-
-          // 에러가 있어도 온보딩으로 보냄
           Alert.alert('알림', 'AI 프로필을 설정해주세요.', [
             {
               text: '확인',
-              onPress: () => navigation.navigate('SignUpSuccess')
+              onPress: () => navigation.navigate('NotificationPermission', { phone })
             }
           ]);
         }
@@ -123,7 +128,6 @@ export default function LoginScreen({ navigation }: any) {
     } catch (error: any) {
       console.error('❌ [LoginScreen] 로그인 실패:', error);
 
-      // 로그인 실패 시 토큰 정리
       await AsyncStorage.removeItem('accessToken');
       await AsyncStorage.removeItem('userPhone');
       delete apiClient.defaults.headers.common.Authorization;

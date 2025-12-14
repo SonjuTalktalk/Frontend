@@ -12,10 +12,10 @@ export interface BackgroundItem {
 
 // 기본 배경 (구매 전)
 export const DEFAULT_BACKGROUNDS = {
-  main: require('../../assets/images/배경.png'),
-  main2: require('../../assets/images/배경2.png'),
-  health: require('../../assets/images/건강배경.png'),
-  health2: require('../../assets/images/배경2.png'),
+  main: require('../../assets/images/background.png'),
+  main2: require('../../assets/images/background2.png'),
+  health: require('../../assets/images/healthbackground.jpg'),
+  health2: require('../../assets/images/background2.png'),
 };
 
 // 구매 가능한 배경 목록

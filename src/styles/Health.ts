@@ -28,7 +28,7 @@ export const healthStyles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 30,
     paddingHorizontal: 20,
     paddingBottom: 20,
     zIndex: 10,
@@ -56,7 +56,7 @@ export const healthStyles = StyleSheet.create({
   // 스크롤 컨텐츠
   scrollContent: {
     padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 80,
   },
 
   // HealthPage - 히어로 섹션

@@ -30,7 +30,7 @@ backgroundImage2: {
    },
 
  scrollContent: {
-   paddingTop: 60,
+   paddingTop: 20,
    paddingBottom: 100,
  },
 
@@ -113,8 +113,9 @@ backgroundImage2: {
    backgroundColor: '#fff',
    paddingHorizontal: 20,
    paddingVertical: 20,
+   bottom: 60,
    borderRadius: 25,
-   gap: 110,
+   gap: 150,
    shadowColor: '#000',
    shadowOffset: { width: 0, height: 2 },
    shadowOpacity: 0.1,
