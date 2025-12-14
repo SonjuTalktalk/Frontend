@@ -105,51 +105,78 @@ export const styles = StyleSheet.create({
       backgroundColor: '#FFFFFF',
   },
 
-  /*성격 정하기 */
-    characterSection: {
-      width: '100%',
-      paddingHorizontal: 20,
-      marginBottom: 30,
-    },
+// 성격 선택 섹션
+characterSection: {
+  marginTop: 10,
+  paddingHorizontal: 20,
+},
 
-    sectionTitle: {
-      fontFamily: 'Pretendard-Bold',
-      fontSize: 20,
-      color: '#333',
-      marginBottom: 15,
-    },
+sectionTitle: {
+  fontFamily: 'Pretendard-Bold',
+  fontSize: 18,
+  color: '#222',
+  marginBottom: 12,
+},
 
-    optionsContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 10,
-    },
+optionsContainer: {
+  gap: 12, // RN 0.71+ 지원. 안 되면 아래 참고(대체)
+},
 
-    optionButton: {
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      borderRadius: 20,
-      backgroundColor: '#E0E0E0',
-      minWidth: 80,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+optionButton: {
+  paddingVertical: 14,
+  paddingHorizontal: 16,
+  borderRadius: 14,
+  borderWidth: 1,
+  borderColor: '#E9ECEF',
+  backgroundColor: '#FFFFFF',
+},
 
-    optionButtonSelected: {
-      backgroundColor: '#02BFDC',
-    },
+optionButtonSelected: {
+  borderColor: '#02BFDC',
+  backgroundColor: 'rgba(2, 191, 220, 0.08)', // 살짝만
+},
 
-    optionText: {
-      fontFamily: 'Pretendard-Medium',
-      fontSize: 16,
-      color: '#666',
-    },
+optionText: {
+  fontFamily: 'Pretendard-Bold',
+  fontSize: 16,
+  color: '#222',
+},
 
-    optionTextSelected: {
-      color: '#fff',
-      fontFamily: 'Pretendard-Bold',
-    },
+optionTextSelected: {
+  color: '#02BFDC',
+},
 
+optionDescription: {
+  marginTop: 6,
+  fontFamily: 'Pretendard-Regular',
+  fontSize: 16,
+  color: '#6B7280',
+  lineHeight: 18,
+},
+
+optionDescriptionSelected: {
+  color: '#0891B2', // 선택 시 조금 진하게
+},
+
+premiumBadge: {
+  marginLeft: 8,
+  paddingHorizontal: 8,
+  paddingVertical: 3,
+  borderRadius: 999,
+  backgroundColor: '#FFE3E3',
+},
+premiumBadgeText: {
+  fontSize: 16,
+  fontFamily: 'Pretendard-Bold',
+  color: '#FF4D4F',
+},
+
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 20,
+  },
     divider: {
       width: '100%',
       height: 1,
@@ -158,7 +185,7 @@ export const styles = StyleSheet.create({
     },
 
     optionDescription: {
-      fontSize: 12,
+      fontSize: 16,
       color: '#6C757D',
       marginTop: 4,
       textAlign: 'center',
