@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { onboardingStyles as s } from '../../styles/Template';
 import { CognitoUserPool, CognitoUserAttribute } from 'amazon-cognito-identity-js';
+import ScaledText from '../../components/ScaledText';
 
 function userPoolSignUp(
   name: string,
@@ -24,6 +25,12 @@ function userPoolSignUp(
       new CognitoUserAttribute({ Name: 'birthdate', Value: formattedBirthDate }),
     ];
 
+    console.log('📝 Cognito 회원가입 요청');
+    console.log('   - Username (전화번호):', phone);
+    console.log('   - 이름:', name);
+    console.log('   - 성별:', gender);
+    console.log('   - 생년월일:', formattedBirthDate);
+
     userPool.signUp(
       phone, // username
       password, // password
@@ -31,10 +38,10 @@ function userPoolSignUp(
       [], // validationData
       (err, result) => {
         if (err) {
-          console.log('Cognito SignUp Error:', err);
+          console.error('❌ Cognito 회원가입 실패:', err);
           return reject(err);
         } else {
-          console.log('Cognito SignUp Success:', result);
+          console.log('✅ Cognito 회원가입 성공:', result);
           resolve(true);
         }
       }
@@ -83,7 +90,16 @@ export default function SignUpStep2Screen({ route, navigation }: any) {
     // Cognito 회원가입 요청 및 인증번호 발송
     setLoading(true);
     try {
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🚀 Step 2: Cognito 회원가입');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
       await userPoolSignUp(name, '+82' + phone.substring(1), gender, birthDate, password, poolData);
+
+      console.log('✅ 인증번호 발송 완료');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
 
       Alert.alert('성공', '인증번호가 전송되었습니다.\n전화번호를 확인해주세요.', [
         {
@@ -100,7 +116,14 @@ export default function SignUpStep2Screen({ route, navigation }: any) {
         },
       ]);
     } catch (error: any) {
-      console.error('회원가입 에러:', error);
+      console.error('');
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('❌ Cognito 회원가입 에러');
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('에러 코드:', error.code);
+      console.error('에러 메시지:', error.message);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('');
 
       // Cognito 에러 메시지 처리
       if (error.code === 'UsernameExistsException') {
@@ -119,12 +142,12 @@ export default function SignUpStep2Screen({ route, navigation }: any) {
 
   return (
     <View style={s.container1}>
-      <Text style={s.title}>비밀번호를{'\n'}설정해주세요</Text>
+      <ScaledText fontSize={24} style={s.title}>비밀번호를{'\n'}설정해주세요</ScaledText>
 
-      <Text style={s.passwordGuide}>
+      <ScaledText fontSize={14} style={s.passwordGuide}>
         • 8자리 이상{'\n'}
         • 대문자, 소문자, 숫자, 특수문자 포함
-      </Text>
+      </ScaledText>
 
       <TextInput
         style={s.input}
@@ -150,7 +173,7 @@ export default function SignUpStep2Screen({ route, navigation }: any) {
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={s.buttonText}>인증번호 받기</Text>
+          <ScaledText fontSize={18} style={s.buttonText}>인증번호 받기</ScaledText>
         )}
       </TouchableOpacity>
     </View>

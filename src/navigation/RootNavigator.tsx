@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, AppState, AppStateStatus, DeviceEventEmitter } from 'react-native';
 
 import OnboardingNavigator from './OnboardingNavigator';
 import MainTabNavigator from './MainTabNavigator';
@@ -16,6 +16,9 @@ import ChatListPage from '../pages/AiChatPage/ChatList';
 // Mission Pages
 import DailyQuestPage from '../pages/DailyQuestPage/DailyQuestPage';
 import MissionChatPage from '../pages/DailyQuestPage/MissionChatPage';
+
+// Shop Pages
+import ItemShopPage from '../pages/ItemShopPage/ItemShopPage';
 
 // Home Pages
 import SettingsPage from '../pages/HomePage/SettingsPage';
@@ -97,7 +100,7 @@ export default function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF' }}>
         <ActivityIndicator size="large" color="#02BFDC" />
       </View>
     );
@@ -195,6 +198,13 @@ export default function RootNavigator() {
           <Stack.Screen
             name="MissionChat"
             component={MissionChatPage}
+            options={{ animation: 'slide_from_right' }}
+          />
+
+          {/* Shop Stack */}
+          <Stack.Screen
+            name="Shop"
+            component={ItemShopPage}
             options={{ animation: 'slide_from_right' }}
           />
         </>

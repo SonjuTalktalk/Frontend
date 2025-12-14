@@ -4,6 +4,7 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
+import PageHeader from '../../components/common/PageHeader';
 import { ChatStackParamList } from '../../types/navigation';
 import ScaledText from '../../components/ScaledText';
 
@@ -112,7 +113,6 @@ const styles = StyleSheet.create({
     width: 80,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
     gap: 8,
   },
   iconButton: {

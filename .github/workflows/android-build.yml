@@ -1,0 +1,93 @@
+name: Android Build (Release)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    # ★★★ 권한 문제 해결을 위해 이 부분을 추가했습니다! ★★★
+    permissions:
+      contents: write
+    # ★★★ 여기까지 추가 ★★★
+
+    steps:
+      # 1. 내 코드 가져오기
+      - uses: actions/checkout@v4
+
+      # 2. Node.js 설정 (metro-config toReversed 에러 해결을 위해 20 버전 사용)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. 라이브러리 설치
+      - name: Install Dependencies
+        run: npm install
+
+      # 4. 자바 설정
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # 5. Build Tools 29.0.3 강제 설치 (sdkmanager 경로 에러 해결)
+      - name: Install Android Build Tools 29.0.3 (Fix signing error)
+        run: echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;29.0.3"
+
+      # 6. 권한 부여
+      - name: Grant execute permission for gradlew
+        run: chmod +x android/gradlew
+
+      # 7. Release 버전 빌드 (아직 서명 안 됨)
+      - name: Build Release APK
+        working-directory: ./android
+        run: ./gradlew assembleRelease
+
+      # 8. GitHub Secrets의 키를 가져와서 서명(Sign)하기
+      - name: Sign Release APK
+        uses: r0adkll/sign-android-release@v1
+        id: sign_app
+        with:
+          releaseDirectory: android/app/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      # 9. 완성된 app-release.apk 업로드 (Artifacts 탭용)
+      - name: Upload Artifact APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          
+      # -------------------------------------------------------------
+      # 10. 릴리즈 태그 생성 (노션용 영구 URL 생성을 위해 추가)
+      - name: Create Release Tag
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }} # 릴리즈 태그 이름 (예: v1, v2)
+          release_name: App Release Build ${{ github.run_number }}
+          draft: false
+          prerelease: false
+
+      # 11. 릴리즈에 APK 파일 첨부 (노션용 URL 생성)
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.sign_app.outputs.signedReleaseFile }} # 서명된 APK 경로
+          asset_name: app-release-v${{ github.run_number }}.apk
+          asset_content_type: application/vnd.android.package-archive
+      # -------------------------------------------------------------

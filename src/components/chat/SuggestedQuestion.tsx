@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
-import ScaledText from '../../components/ScaledText';
+import ScaledText from '../ScaledText';
 
 interface SuggestedQuestionProps {
   question: string;

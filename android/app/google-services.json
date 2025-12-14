@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "23047230856",
+    "project_id": "sonjutoktok",
+    "storage_bucket": "sonjutoktok.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:23047230856:android:5f25d85f9fcf8943cd963d",
+        "android_client_info": {
+          "package_name": "com.sonjuproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBC-MeIEzQza0GhOwFSeYzmVLMytgHG8u8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

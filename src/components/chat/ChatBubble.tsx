@@ -1,10 +1,11 @@
+// src/components/chat/ChatBubble.tsx
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Message } from '../../types/chat';
-import ScaledText from '../../components/ScaledText';
+import ScaledText from '../ScaledText';
+import { ChatMessage } from '@/contexts/ChatContext';
 
 interface ChatBubbleProps {
-  message: Message;
+  message: ChatMessage;
 }
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
@@ -14,38 +15,36 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message }) => {
     return (
       <View style={styles.userContainer}>
         <View style={styles.userBubble}>
-          {/* 본문: 중간 20 */}
           <ScaledText style={styles.userText} fontSize={20}>
             {message.content}
           </ScaledText>
         </View>
+        <ScaledText fontSize={12} style={styles.userTimestamp}>
+          {message.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+        </ScaledText>
       </View>
     );
   }
 
   return (
     <View style={styles.assistantContainer}>
-      {/* TODO: 캐릭터 아바타 이미지 에셋 추가
-      <Image
-        source={require('../../assets/character-excited.png')}
-        style={styles.avatar}
-      />
-      */}
       <View style={styles.avatarPlaceholder} />
       <View style={styles.assistantBubble}>
-        {/* 본문: 중간 20 */}
         <ScaledText style={styles.assistantText} fontSize={20}>
           {message.content}
         </ScaledText>
       </View>
+      <ScaledText fontSize={12} style={styles.assistantTimestamp}>
+        {message.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+      </ScaledText>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   userContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
     marginBottom: 16,
     paddingHorizontal: 16,
   },
@@ -63,26 +62,30 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   userText: {
-    fontSize: 20, // ScaledText가 20을 기준으로 스케일 적용
     lineHeight: 28,
     color: '#FFFFFF',
   },
+  userTimestamp: {
+    color: '#7A9CA5',
+    marginTop: 4,
+  },
   assistantContainer: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: 16,
     paddingHorizontal: 16,
-    gap: 12,
   },
   avatarPlaceholder: {
     width: 48,
     height: 48,
     borderRadius: 24,
     backgroundColor: '#A5BCC3',
+    marginRight: 12,
   },
   assistantBubble: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
-    borderTopLeftRadius: 4,
+    borderBottomLeftRadius: 4,
     paddingHorizontal: 20,
     paddingVertical: 12,
     maxWidth: '75%',
@@ -93,9 +96,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   assistantText: {
-    fontSize: 20, // ScaledText가 20을 기준으로 스케일 적용
     lineHeight: 28,
     color: '#2D4550',
+  },
+  assistantTimestamp: {
+    color: '#7A9CA5',
+    marginTop: 4,
+    marginLeft: 60,
   },
 });
 

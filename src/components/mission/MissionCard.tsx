@@ -1,5 +1,7 @@
+// src/components/mission/MissionCard.tsx
 import React from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { Mission } from '../../types/mission';
 import { MissionStyles } from '../../styles/MissionStyles';
 import ScaledText from '../../components/ScaledText';
@@ -9,7 +11,7 @@ interface MissionCardProps {
   onStart: (mission: Mission) => void;
 }
 
-const MissionCard: React.FC<MissionCardProps> = ({ mission, onStart }) => {
+const MissionCard = ({ mission, onStart }: MissionCardProps) => {
   return (
     <View style={MissionStyles.missionCard}>
       <View style={MissionStyles.cardHeader}>

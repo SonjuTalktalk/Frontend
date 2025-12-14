@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { onboardingStyles as s } from '../../styles/Template';
 import { ICognitoUserPoolData } from 'amazon-cognito-identity-js';
+import ScaledText from '../../components/ScaledText';
 
 const poolData: ICognitoUserPoolData = {
     UserPoolId: 'ap-northeast-1_Frx61b697',
@@ -78,6 +79,12 @@ export default function SignUpStep1Screen({ navigation }: any) {
       return;
     }
 
+    console.log('✅ Step 1 완료 - Step 2로 이동');
+    console.log('   - 이름:', name.trim());
+    console.log('   - 성별:', gender);
+    console.log('   - 생년월일:', birthDate);
+    console.log('   - 전화번호:', phone);
+
     // 다음 단계(비밀번호 입력)로 데이터 전달
     navigation.navigate('SignUpStep2', {
       name: name.trim(),
@@ -91,7 +98,7 @@ export default function SignUpStep1Screen({ navigation }: any) {
   return (
     <ScrollView contentContainerStyle={s.scrollContainer}>
       <View style={s.container1}>
-        <Text style={s.title}>회원 정보를{'\n'}입력해주세요</Text>
+        <ScaledText fontSize={24} style={s.title}>회원 정보를{'\n'}입력해주세요</ScaledText>
 
         {/* 이름 */}
         <TextInput
@@ -108,17 +115,17 @@ export default function SignUpStep1Screen({ navigation }: any) {
             style={[s.genderButton, gender === 'male' && s.genderButtonActive]}
             onPress={() => setGender('male')}
           >
-            <Text style={[s.genderText, gender === 'male' && s.genderTextActive]}>
+            <ScaledText fontSize={16} style={[s.genderText, gender === 'male' && s.genderTextActive]}>
               남성
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[s.genderButton, gender === 'female' && s.genderButtonActive]}
             onPress={() => setGender('female')}
           >
-            <Text style={[s.genderText, gender === 'female' && s.genderTextActive]}>
+            <ScaledText fontSize={16} style={[s.genderText, gender === 'female' && s.genderTextActive]}>
               여성
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
         </View>
 
@@ -143,7 +150,7 @@ export default function SignUpStep1Screen({ navigation }: any) {
         />
 
         <TouchableOpacity style={s.button} onPress={handleNext}>
-          <Text style={s.buttonText}>다음으로</Text>
+          <ScaledText fontSize={18} style={s.buttonText}>다음으로</ScaledText>
         </TouchableOpacity>
       </View>
     </ScrollView>

@@ -1,29 +1,33 @@
-// 프롬프트 타입 정의
-export type PromptType = 'gentle' | 'reliable' | 'cheerful' | 'smart';
+// src/types/chat.ts
+import { Personality } from './ai';
 
-// 프롬프트 설정 인터페이스
-export interface PromptConfig {
-  type: PromptType;
-  label: string;
-  systemMessage: string;
-}
+export type PromptType = Personality;
 
-// 메시지 역할
-export type MessageRole = 'user' | 'assistant' | 'system';
-
-// 메시지 인터페이스
-export interface Message {
-  id: string;
-  role: MessageRole;
-  content: string;
-  timestamp: Date;
-}
-
-// 채팅 인터페이스
+/**
+ * 채팅방 타입
+ */
 export interface Chat {
   id: string;
   title: string;
   date: Date;
-  messages: Message[];
-  prompt: PromptType;
+  lastMessage: string;
+}
+
+/**
+ * 메시지 발신자 타입
+ */
+export enum MessageSender {
+  USER = 'user',
+  AI = 'ai',
+}
+
+/**
+ * 채팅 메시지 타입
+ */
+export interface ChatMessage {
+  id: string;
+  sender: MessageSender;
+  content: string;
+  timestamp: Date;
+  isTyping?: boolean;
 }

@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+// src/screens/chat/PromptSettings.tsx
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { 
+  View,  
+  TouchableOpacity, 
+  StyleSheet, 
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Image
+} from 'react-native';
+import ScaledText from '../../components/ScaledText';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import PageHeader from '../../components/common/PageHeader';
 import { useChat } from '../../contexts/ChatContext';
-import { PromptType } from '../../types/chat';
+import { Personality } from '../../types/ai';
 import { promptConfigs } from '../../utils/promptHelper';
 import { ChatStackParamList } from '../../types/navigation';
-import ScaledText from '../../components/ScaledText';
+import { aiProfileAPI } from '../../services/aiProfile';
 
 type PromptSettingsNavigationProp = NativeStackNavigationProp<ChatStackParamList, 'PromptSettings'>;
 
@@ -16,50 +27,95 @@ const PromptSettings = () => {
   const navigation = useNavigation<PromptSettingsNavigationProp>();
   const { currentPrompt, setCurrentPrompt } = useChat();
 
-  const [selectedPrompt, setSelectedPrompt] = useState<PromptType>(currentPrompt);
+  const [selectedPrompt, setSelectedPrompt] = useState<Personality>(currentPrompt);
+  const [loading, setLoading] = useState(false);
+  const [aiNickname, setAiNickname] = useState<string>('손주');
 
-  const handleSelectPrompt = (promptType: PromptType) => {
+  useEffect(() => {
+    const fetchAiProfile = async () => {
+      try {
+        const profile = await aiProfileAPI.getAiProfile();
+        setAiNickname(profile.nickname);
+        setSelectedPrompt(profile.personality);
+        setCurrentPrompt(profile.personality);
+      } catch (error) {
+        console.error('AI 프로필 로드 실패:', error);
+      }
+    };
+
+    fetchAiProfile();
+  }, []);
+
+  const handleSelectPrompt = (promptType: Personality) => {
     setSelectedPrompt(promptType);
   };
 
-  const handleSave = () => {
-    setCurrentPrompt(selectedPrompt);
-    navigation.goBack();
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+
+      await aiProfileAPI.updatePreferences(selectedPrompt);
+      setCurrentPrompt(selectedPrompt);
+
+      Alert.alert('저장 완료', `${aiNickname}의 성격이 변경되었습니다.`, [
+        {
+          text: '확인',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
+    } catch (error: any) {
+      console.error('프롬프트 저장 실패:', error);
+      Alert.alert('오류', error.message || '성격 변경에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const promptTypes: PromptType[] = ['gentle', 'reliable', 'cheerful', 'smart'];
+  const promptTypes: Personality[] = [
+    Personality.FRIENDLY,
+    Personality.ACTIVE,
+    Personality.PLEASANT,
+    Personality.RELIABLE,
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.container}>
-        {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Icon name="chevron-back" size={24} color="#333" />
           </TouchableOpacity>
 
-          {/* 큰 글씨 24 */}
           <ScaledText style={styles.headerTitle} fontSize={24}>
             프롬프트 설정
           </ScaledText>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            {/* 중간 글씨 20 */}
-            <ScaledText style={styles.saveButtonText} fontSize={20}>
-              저장
-            </ScaledText>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#02BFDC" />
+            ) : (
+              <ScaledText style={styles.saveButtonText} fontSize={20}>
+                저장
+              </ScaledText>
+            )}
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content}>
-          {/* TODO: 캐릭터 이미지 에셋 추가 */}
           <View style={styles.characterContainer}>
-            <View style={styles.characterPlaceholder} />
+            <View style={styles.characterPlaceholder}>
+              <Image
+                source={require('../../../assets/images/icons/SonjuHeadIcon.png')}
+                style={styles.character}
+                resizeMode="contain"
+              />
+            </View>
+            <ScaledText fontSize={20} style={styles.characterName}>{aiNickname}</ScaledText>
           </View>
 
-          {/* 중간 글씨 20 */}
-          <ScaledText style={styles.description} fontSize={20}>
-            프롬프트를 고르면{'\n'}손주의 목소리를 들을 수 있어요.
+          <ScaledText fontSize={18} style={styles.description}>
+            프롬프트를 고르면{'\n'}
+            {aiNickname}의 목소리를 들을 수 있어요.
           </ScaledText>
 
           <View style={styles.promptList}>
@@ -74,13 +130,28 @@ const PromptSettings = () => {
                   onPress={() => handleSelectPrompt(type)}
                   activeOpacity={0.7}
                 >
-                  {/* 작은 글씨 18 */}
-                  <ScaledText
-                    style={[styles.promptLabel, isSelected && styles.promptLabelSelected]}
-                    fontSize={18}
-                  >
-                    {config.label}
-                  </ScaledText>
+                  <View style={styles.promptItemContent}>
+                    <ScaledText
+                      style={[styles.promptLabel, isSelected && styles.promptLabelSelected]}
+                      fontSize={18}
+                    >
+                      {config.label}
+                    </ScaledText>
+
+                    <ScaledText
+                      style={[
+                        styles.promptDescription,
+                        isSelected && styles.promptDescriptionSelected,
+                      ]}
+                      fontSize={14}
+                    >
+                      {config.description}
+                    </ScaledText>
+                  </View>
+
+                  {isSelected && (
+                    <Icon name="checkmark-circle" size={24} color="#02BFDC" />
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -111,7 +182,6 @@ const styles = StyleSheet.create({
     width: 80,
   },
   headerTitle: {
-    fontSize: 18, // ScaledText가 24 기준으로 스케일 적용
     fontWeight: '600',
     color: '#2D4550',
   },
@@ -121,7 +191,6 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   saveButtonText: {
-    fontSize: 16, // ScaledText가 20 기준으로 스케일 적용
     color: '#02BFDC',
     fontWeight: '600',
   },
@@ -131,16 +200,22 @@ const styles = StyleSheet.create({
   characterContainer: {
     alignItems: 'center',
     marginTop: 40,
-    marginBottom: 32,
+    marginBottom: 20,
   },
   characterPlaceholder: {
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#A5BCC3',
+    backgroundColor: '#9fd8e9ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  characterName: {
+    marginTop: 16,
+    fontWeight: '600',
+    color: '#2D4550',
   },
   description: {
-    fontSize: 18, // ScaledText가 20 기준으로 스케일 적용
     fontWeight: '500',
     color: '#2D4550',
     textAlign: 'center',
@@ -150,6 +225,7 @@ const styles = StyleSheet.create({
   promptList: {
     paddingHorizontal: 32,
     gap: 16,
+    paddingBottom: 32,
   },
   promptItem: {
     backgroundColor: '#FFFFFF',
@@ -163,20 +239,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   promptItemSelected: {
     backgroundColor: '#E8F7FA',
     borderColor: '#02BFDC',
   },
+  promptItemContent: {
+    flex: 1,
+  },
   promptLabel: {
-    fontSize: 18, // ScaledText가 18 기준으로 스케일 적용(작게)
     fontWeight: '500',
     color: '#2D4550',
-    textAlign: 'center',
+    marginBottom: 4,
   },
   promptLabelSelected: {
     color: '#02BFDC',
     fontWeight: '600',
+  },
+  promptDescription: {
+    color: '#6C757D',
+  },
+  promptDescriptionSelected: {
+    color: '#02BFDC',
   },
 });
 

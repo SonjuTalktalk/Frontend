@@ -120,6 +120,7 @@ backgroundImage2: {
    shadowOpacity: 0.1,
    shadowRadius: 10,
    elevation: 3,
+   width: 385,
  },
 
  pointSection:{

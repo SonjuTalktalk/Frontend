@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { View, Image, TouchableOpacity } from 'react-native';
 import {styles} from '../../styles/Onboarding';
 import {onboardingStyles} from '../../styles/Template';
+import ScaledText from '../../components/ScaledText';
 
 export default function SignUpSuccess({ navigation }: any) {
       return (
         <View style={styles.container}>
-            <Text style={styles.title}>이제부터{'\n'}손주와 함께{'\n'}즐거운 AI 공부를{'\n'}해봐요!</Text>
+            <ScaledText fontSize={28} style={styles.title}>이제부터{'\n'}손주와 함께{'\n'}즐거운 AI 공부를{'\n'}해봐요!</ScaledText>
              <Image
                       source={require('../../../assets/images/sonjusmile.png')}
                       style={styles.sonju}
@@ -18,7 +19,7 @@ export default function SignUpSuccess({ navigation }: any) {
                     accessibilityRole="button"
                     onPress={() => navigation.navigate('FontSizeSelector')}
             >
-                    <Text style={onboardingStyles.buttonText}>다음으로</Text>
+                    <ScaledText fontSize={18} style={onboardingStyles.buttonText}>다음으로</ScaledText>
           </TouchableOpacity>
         </View>
       );
