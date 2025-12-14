@@ -96,6 +96,7 @@ class MissionService {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ point })
     });
+
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.detail || "포인트 지급 실패");
