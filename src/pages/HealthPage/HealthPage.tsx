@@ -30,8 +30,8 @@ export default function HealthPage() {
     bg1: any;
     bg2: any | null;
   }>({
-    bg1: require('../../../assets/images/배경.png'),
-    bg2: require('../../../assets/images/배경2.png'),
+    bg1: require('../../../assets/images/MainBg.png'),
+    bg2: require('../../../assets/images/MainBg2.png'),
   });
 
   const currentYear = currentDate.getFullYear();

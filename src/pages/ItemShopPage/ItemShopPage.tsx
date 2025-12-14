@@ -31,7 +31,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: 'ribbon',
     name: '리본',
     price: 15,
-    imageUrl: require('../../../assets/images/리본.png'),
+    imageUrl: require('../../../assets/images/Ribbon.png'),
     category: 'accessory',
     itemNumber: 1,
   },
@@ -39,7 +39,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: 'glasses',
     name: '교복',
     price: 20,
-    imageUrl: require('../../../assets/images/안경.png'),
+    imageUrl: require('../../../assets/images/Glasses.png'),
     category: 'hat',
     itemNumber: 2,
   },
@@ -47,7 +47,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: 'hiking-hat',
     name: '등산 모자',
     price: 20,
-    imageUrl: require('../../../assets/images/등산모자.png'),
+    imageUrl: require('../../../assets/images/HikingHat.png'),
     category: 'hat',
     itemNumber: 3,
   },
@@ -55,7 +55,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: 'bunny-band',
     name: '토끼 머리띠',
     price: 20,
-    imageUrl: require('../../../assets/images/토끼머리띠.png'),
+    imageUrl: require('../../../assets/images/RabbitHat.png'),
     category: 'accessory',
     itemNumber: 4,
   },
@@ -63,7 +63,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: 'wizard-hat',
     name: '마법사 모자',
     price: 20,
-    imageUrl: require('../../../assets/images/마법사모자.png'),
+    imageUrl: require('../../../assets/images/MagicHat.png'),
     category: 'hat',
     itemNumber: 5,
   },
@@ -71,7 +71,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: 'crown',
     name: '왕관',
     price: 20,
-    imageUrl: require('../../../assets/images/왕관.png'),
+    imageUrl: require('../../../assets/images/Crown.png'),
     category: 'accessory',
     itemNumber: 6,
   },
@@ -90,8 +90,8 @@ export default function ShopPage({ navigation }: any) {
     bg1: any;
     bg2: any | null;
   }>({
-    bg1: require('../../../assets/images/배경.png'),
-    bg2: require('../../../assets/images/배경2.png'),
+    bg1: require('../../../assets/images/MainBg.png'),
+    bg2: require('../../../assets/images/MainBg2.png'),
   });
 
   useEffect(() => {
@@ -231,22 +231,22 @@ export default function ShopPage({ navigation }: any) {
     const equippedItemIds = Object.values(equippedItems);
 
     if (equippedItemIds.includes('ribbon')) {
-      return require('../../../assets/images/리본손주.png');
+      return require('../../../assets/images/RibbonSonju.png');
     }
     if (equippedItemIds.includes('hiking-hat')) {
-      return require('../../../assets/images/등산손주.png');
+      return require('../../../assets/images/HikinghatSonju.png');
     }
     if (equippedItemIds.includes('bunny-band')) {
-      return require('../../../assets/images/토끼손주.png');
+      return require('../../../assets/images/RabbitSonju.png');
     }
     if (equippedItemIds.includes('wizard-hat')) {
-      return require('../../../assets/images/마법사손주.png');
+      return require('../../../assets/images/MagicSonju.png');
     }
     if (equippedItemIds.includes('crown')) {
-      return require('../../../assets/images/왕손주.png');
+      return require('../../../assets/images/KingSonju.png');
     }
     if (equippedItemIds.includes('glasses')) {
-      return require('../../../assets/images/교복손주.png');
+      return require('../../../assets/images/UniformSonju.png');
     }
 
     return require('../../../assets/images/sonjusmile.png');

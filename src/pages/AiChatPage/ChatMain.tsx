@@ -18,6 +18,7 @@ const ChatMain = () => {
   const navigation = useNavigation<ChatMainNavigationProp>();
   const { sendMessageToAI, clearChat } = useChat();
   const [isLoading, setIsLoading] = useState(false);
+  const [sonjuName, setSonjuName] = useState('손주');
 
   const suggestedQuestions = ['오늘 뉴스 요약', '오늘 날씨 어때?'];
 
@@ -50,6 +51,23 @@ const ChatMain = () => {
     }
   };
 
+  const loadAiProfile = async () => {
+      try {
+        const aiProfileStr = await AsyncStorage.getItem('aiProfile');
+        if (aiProfileStr) {
+          const aiProfile = JSON.parse(aiProfileStr);
+          console.log('✅ AI 프로필 로드:', aiProfile);
+          setSonjuName(aiProfile.nickname || '손주');
+        } else {
+          console.log('⚠️ AI 프로필 없음, 기본 이름 사용');
+          setSonjuName('손주');
+        }
+      } catch (error) {
+        console.error('AI 프로필 로드 실패:', error);
+        setSonjuName('손주');
+      }
+    };
+
   const handleQuestionClick = (question: string) => {
     handleSendMessage(question);
   };
@@ -57,7 +75,7 @@ const ChatMain = () => {
   return (
     <SafeAreaView style={styles.container}>
       <PageHeader
-        title="돌쇠"
+        title= {sonjuName}
         onBack={() => navigation.goBack()}
         safeArea={true}
         rightButton={

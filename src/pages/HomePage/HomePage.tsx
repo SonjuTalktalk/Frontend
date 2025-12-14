@@ -18,8 +18,8 @@ export default function HomePage({ navigation }: any) {
     bg1: any;
     bg2: any | null;
   }>({
-    bg1: require('../../../assets/images/배경.png'),
-    bg2: require('../../../assets/images/배경2.png'),
+    bg1: require('../../../assets/images/MainBg.png'),
+    bg2: require('../../../assets/images/MainBg2.png'),
   });
 
   // 화면이 포커스될 때마다 착용한 아이템, AI 프로필, 배경 로드
@@ -74,22 +74,22 @@ export default function HomePage({ navigation }: any) {
     const equippedItemIds = Object.values(equippedItems);
 
     if (equippedItemIds.includes('ribbon')) {
-      return require('../../../assets/images/리본손주.png');
+      return require('../../../assets/images/RibbonSonju.png');
     }
     if (equippedItemIds.includes('hiking-hat')) {
-      return require('../../../assets/images/등산손주.png');
+      return require('../../../assets/images/HikinghatSonju.png');
     }
     if (equippedItemIds.includes('bunny-band')) {
-      return require('../../../assets/images/토끼손주.png');
+      return require('../../../assets/images/RabbitSonju.png');
     }
     if (equippedItemIds.includes('wizard-hat')) {
-      return require('../../../assets/images/마법사손주.png');
+      return require('../../../assets/images/MagicSonju.png');
     }
     if (equippedItemIds.includes('crown')) {
-      return require('../../../assets/images/왕손주.png');
+      return require('../../../assets/images/KingSonju.png');
     }
     if(equippedItemIds.includes('glasses')){
-      return require('../../../assets/images/교복손주.png');
+      return require('../../../assets/images/UniformSonju.png');
     }
 
     return require('../../../assets/images/sonjusmile.png');
