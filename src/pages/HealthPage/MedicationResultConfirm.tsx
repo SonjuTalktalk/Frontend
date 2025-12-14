@@ -1,10 +1,13 @@
 // src/pages/HealthPage/MedicationResultConfirm.tsx
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, Modal, TextInput } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
 import { healthStyles } from '../../styles/Health';
+import { createMedicine, convertDateToAPIFormat, MedicineItem } from '../../api/medicineApi';
+// ✅ Todo 페이지의 DateTimePicker 재사용
+import { DateTimePicker } from '../TodoPage/DateTimePicker';
 
 const MEDICATION_STORAGE_KEY = '@medication_data';
 
@@ -26,13 +29,11 @@ export default function MedicationResultConfirm() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
 
-  const ocrResults = route.params?.ocrResults || [
-    { id: '1', name: '약이름1', frequency: '3', days: '8', startDate: '2025/11/09' },
-    { id: '2', name: '약이름2', frequency: '3', days: '8', startDate: '2025/11/09' },
-    { id: '3', name: '약이름3', frequency: '3', days: '8', startDate: '2025/11/09' }
-  ];
+  const ocrResults = route.params?.ocrResults || [];
+  const isFromOCR = route.params?.isFromOCR || false;
 
   const [medications, setMedications] = useState<MedicationResult[]>(ocrResults);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [editingField, setEditingField] = useState<{
     medId: string;
@@ -51,7 +52,7 @@ export default function MedicationResultConfirm() {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    return `${year}/${month}/${day}`;
+    return `${year}/${month}/${day}`; // YYYY/MM/DD
   };
 
   const parseDate = (dateStr: string): Date => {
@@ -70,7 +71,7 @@ export default function MedicationResultConfirm() {
       setShowDaysPicker(true);
     } else if (field === 'startDate') {
       setEditingField({ medId, field, value: currentValue });
-      setShowDatePicker(true);
+      setShowDatePicker(true); // ✅ DateTimePicker 열기
     }
   };
 
@@ -109,29 +110,8 @@ export default function MedicationResultConfirm() {
     setEditingField(null);
   };
 
-  const handleDateChange = (direction: 'prev' | 'next') => {
-    if (editingField) {
-      const currentDate = parseDate(editingField.value);
-      if (direction === 'prev') {
-        currentDate.setDate(currentDate.getDate() - 1);
-      } else {
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      setEditingField({ ...editingField, value: formatDate(currentDate) });
-    }
-  };
-
-  const handleDateSave = () => {
-    if (editingField) {
-      setMedications(prev =>
-        prev.map(med =>
-          med.id === editingField.medId ? { ...med, startDate: editingField.value } : med
-        )
-      );
-    }
-    setShowDatePicker(false);
-    setEditingField(null);
-  };
+  // ⛔ 예전 좌우 화살표 날짜 변경/저장은 더 이상 사용하지 않으므로 삭제해도 됨
+  // handleDateChange, handleDateSave 제거
 
   const getTimeSlots = (frequency: string): { time: string; label: string }[] => {
     const freq = parseInt(frequency);
@@ -154,11 +134,55 @@ export default function MedicationResultConfirm() {
   };
 
   const handleComplete = async () => {
+    console.log('=== 복약 일괄 등록 시작 ===');
+
+    const invalidMed = medications.find(
+      med => !med.name || !med.frequency || !med.days || !med.startDate
+    );
+
+    if (invalidMed) {
+      Alert.alert('입력 오류', '모든 약의 정보를 입력해주세요.');
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
+      const medicineItems: MedicineItem[] = medications.map(med => ({
+        medicine_name: med.name,
+        medicine_daily: parseInt(med.frequency),
+        medicine_period: parseInt(med.days),
+        medicine_date: convertDateToAPIFormat(med.startDate),
+      }));
+
+      const response = await createMedicine(medicineItems);
+
+      const successfulMeds = medications.filter((med, index) => {
+        return response.response[index].registered;
+      });
+
+      const failedMeds = medications.filter((med, index) => {
+        return !response.response[index].registered;
+      });
+
+      if (failedMeds.length > 0) {
+        const failedNames = failedMeds.map(m => m.name).join(', ');
+        if (successfulMeds.length > 0) {
+          Alert.alert(
+            '일부 등록 실패',
+            `${successfulMeds.length}개 등록 완료\n실패: ${failedNames}`
+          );
+        } else {
+          Alert.alert('등록 실패', '복약 등록에 실패했습니다.');
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const stored = await AsyncStorage.getItem(MEDICATION_STORAGE_KEY);
       const existingData = stored ? JSON.parse(stored) : {};
 
-      medications.forEach(med => {
+      successfulMeds.forEach((med) => {
         const startDate = parseDate(med.startDate);
         const daysCount = parseInt(med.days);
         const timeSlots = getTimeSlots(med.frequency);
@@ -175,7 +199,7 @@ export default function MedicationResultConfirm() {
             existingData[dateKey] = [];
           }
 
-          timeSlots.forEach(newSlot => {
+          timeSlots.forEach((newSlot: TimeSlot) => {
             let targetSlot = existingData[dateKey].find((slot: TimeSlot) => slot.time === newSlot.time);
 
             if (!targetSlot) {
@@ -190,9 +214,7 @@ export default function MedicationResultConfirm() {
             const medId = `${dateKey}-${newSlot.time}-${med.name}-${Date.now()}-${Math.random()}`;
             const exists = targetSlot.medications.some(m =>
               m.name === med.name &&
-              m.startDate === med.startDate &&
-              m.frequency === med.frequency &&
-              m.days === med.days
+              m.startDate === med.startDate
             );
 
             if (!exists) {
@@ -215,9 +237,17 @@ export default function MedicationResultConfirm() {
       });
 
       await AsyncStorage.setItem(MEDICATION_STORAGE_KEY, JSON.stringify(existingData));
-      navigation.pop(2);
-    } catch (error) {
-      console.error('복약 데이터 저장 실패:', error);
+
+      Alert.alert(
+        '성공',
+        `${successfulMeds.length}개의 약이 등록되었습니다.`,
+        [{ text: '확인', onPress: () => navigation.pop(2) }]
+      );
+    } catch (error: any) {
+      console.error('❌ 복약 저장 실패:', error);
+      Alert.alert('오류', '복약 등록에 실패했습니다.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -226,7 +256,7 @@ export default function MedicationResultConfirm() {
       <View style={healthStyles.header}>
         <TouchableOpacity style={healthStyles.backButton} onPress={() => navigation.goBack()}>
           <Image
-            source={require('../../../assets/images/왼쪽화살표.png')}
+            source={require('../../../assets/images/leftarrow.png')}
             style={healthStyles.backIcon}
             resizeMode="contain"
           />
@@ -242,7 +272,7 @@ export default function MedicationResultConfirm() {
             이미지 인식 확인
           </ScaledText>
 
-          {medications.map((med, index) => (
+          {medications.map((med) => (
             <View key={med.id} style={healthStyles.medicationResultCard}>
               <TouchableOpacity
                 style={healthStyles.medicationNameHeader}
@@ -276,7 +306,7 @@ export default function MedicationResultConfirm() {
                 </ScaledText>
                 <View style={healthStyles.detailValue}>
                   <ScaledText fontSize={18} style={healthStyles.detailValueText}>
-                    {med.days}
+                    {med.days}일
                   </ScaledText>
                 </View>
               </TouchableOpacity>
@@ -297,15 +327,19 @@ export default function MedicationResultConfirm() {
             </View>
           ))}
 
-          <TouchableOpacity style={healthStyles.completeButton} onPress={handleComplete}>
+          <TouchableOpacity
+            style={[healthStyles.completeButton, isLoading && { opacity: 0.5 }]}
+            onPress={handleComplete}
+            disabled={isLoading}
+          >
             <ScaledText fontSize={24} style={healthStyles.completeButtonText}>
-              생성하기
+              {isLoading ? '등록 중...' : '생성하기'}
             </ScaledText>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* 약 이름 수정 모달 - 수정됨 */}
+      {/* 약 이름 수정 모달 (기존 그대로) */}
       <Modal
         visible={editingField?.field === 'name'}
         transparent
@@ -325,7 +359,7 @@ export default function MedicationResultConfirm() {
               <TextInput
                 style={healthStyles.modalInput}
                 value={editingField?.value || ''}
-                onChangeText={(text) => setEditingField(prev => prev ? { ...prev, value: text } : null)}
+                onChangeText={(text) => setEditingField(prev => (prev ? { ...prev, value: text } : null))}
                 autoFocus
               />
               <View style={healthStyles.modalButtons}>
@@ -351,12 +385,23 @@ export default function MedicationResultConfirm() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 투약 횟수 선택 모달 - 수정됨 */}
-      <Modal visible={showFrequencyPicker} transparent animationType="fade" onRequestClose={() => { setShowFrequencyPicker(false); setEditingField(null); }}>
+      {/* 투약 횟수 선택 모달 (기존) */}
+      <Modal
+        visible={showFrequencyPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowFrequencyPicker(false);
+          setEditingField(null);
+        }}
+      >
         <TouchableOpacity
           style={healthStyles.modalOverlay}
           activeOpacity={1}
-          onPress={() => { setShowFrequencyPicker(false); setEditingField(null); }}
+          onPress={() => {
+            setShowFrequencyPicker(false);
+            setEditingField(null);
+          }}
         >
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <View style={healthStyles.pickerModalContent}>
@@ -392,12 +437,23 @@ export default function MedicationResultConfirm() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 투약 일수 선택 모달 - 수정됨 */}
-      <Modal visible={showDaysPicker} transparent animationType="fade" onRequestClose={() => { setShowDaysPicker(false); setEditingField(null); }}>
+      {/* 투약 일수 선택 모달 (기존) */}
+      <Modal
+        visible={showDaysPicker}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowDaysPicker(false);
+          setEditingField(null);
+        }}
+      >
         <TouchableOpacity
           style={healthStyles.modalOverlay}
           activeOpacity={1}
-          onPress={() => { setShowDaysPicker(false); setEditingField(null); }}
+          onPress={() => {
+            setShowDaysPicker(false);
+            setEditingField(null);
+          }}
         >
           <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
             <View style={healthStyles.pickerModalContent}>
@@ -405,14 +461,14 @@ export default function MedicationResultConfirm() {
                 투약 일수 선택
               </ScaledText>
               <ScrollView style={healthStyles.pickerList}>
-                {daysOptions.map(days => (
+                {daysOptions.map(day => (
                   <TouchableOpacity
-                    key={days}
+                    key={day}
                     style={healthStyles.pickerItem}
-                    onPress={() => handleDaysSelect(days)}
+                    onPress={() => handleDaysSelect(day)}
                   >
                     <ScaledText fontSize={20} style={healthStyles.pickerItemText}>
-                      {days}일
+                      {day}일
                     </ScaledText>
                   </TouchableOpacity>
                 ))}
@@ -433,68 +489,28 @@ export default function MedicationResultConfirm() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 날짜 선택 모달 - 수정됨 */}
-      <Modal visible={showDatePicker} transparent animationType="fade" onRequestClose={() => { setShowDatePicker(false); setEditingField(null); }}>
-        <TouchableOpacity
-          style={healthStyles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => { setShowDatePicker(false); setEditingField(null); }}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <View style={healthStyles.datePickerModalContent}>
-              <ScaledText fontSize={20} style={healthStyles.modalTitle}>
-                투약 시작일 선택
-              </ScaledText>
-              <View style={healthStyles.datePickerContainer}>
-                <TouchableOpacity
-                  style={healthStyles.dateArrowButton}
-                  onPress={() => handleDateChange('prev')}
-                >
-                  <Image
-                    source={require('../../../assets/images/왼쪽화살표꼬리X.png')}
-                    style={healthStyles.datePickerArrow}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-                <ScaledText fontSize={24} style={healthStyles.datePickerText}>
-                  {editingField?.value}
-                </ScaledText>
-                <TouchableOpacity
-                  style={healthStyles.dateArrowButton}
-                  onPress={() => handleDateChange('next')}
-                >
-                  <Image
-                    source={require('../../../assets/images/오른쪽화살표꼬리X.png')}
-                    style={healthStyles.datePickerArrow}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={healthStyles.modalButtons}>
-                <TouchableOpacity
-                  style={healthStyles.modalCancelButton}
-                  onPress={() => {
-                    setShowDatePicker(false);
-                    setEditingField(null);
-                  }}
-                >
-                  <ScaledText fontSize={18} style={healthStyles.modalCancelText}>
-                    취소
-                  </ScaledText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={healthStyles.modalConfirmButton}
-                  onPress={handleDateSave}
-                >
-                  <ScaledText fontSize={18} style={healthStyles.modalConfirmText}>
-                    확인
-                  </ScaledText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+      {/* ✅ 날짜 선택 – Todo DateTimePicker 사용 */}
+      {showDatePicker && editingField?.field === 'startDate' && (
+        <DateTimePicker
+          visible={showDatePicker}
+          mode="date"
+          value={parseDate(editingField.value || formatDate(new Date()))}
+          onClose={() => {
+            setShowDatePicker(false);
+            setEditingField(null);
+          }}
+          onConfirm={(selectedDate) => {
+            const newDateStr = formatDate(selectedDate);
+            setMedications(prev =>
+              prev.map(med =>
+                med.id === editingField.medId ? { ...med, startDate: newDateStr } : med
+              )
+            );
+            setShowDatePicker(false);
+            setEditingField(null);
+          }}
+        />
+      )}
     </View>
   );
 }

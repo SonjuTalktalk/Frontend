@@ -91,7 +91,7 @@ export default function HealthDiaryList() {
           onPress={() => navigation.goBack()}
         >
           <Image
-            source={require('../../../assets/images/왼쪽화살표.png')}
+            source={require('../../../assets/images/leftarrow.png')}
             style={healthStyles.backIcon}
             resizeMode="contain"
           />
@@ -113,7 +113,7 @@ export default function HealthDiaryList() {
                 disabled={!canGoLeft}
               >
                 <Image
-                  source={require('../../../assets/images/왼쪽화살표꼬리X.png')}
+                  source={require('../../../assets/images/arrowleftnotail.png')}
                   style={[
                     healthStyles.arrowIcon,
                     !canGoLeft && { tintColor: '#D0D0D0' }
@@ -130,7 +130,7 @@ export default function HealthDiaryList() {
                 disabled={!canGoRight}
               >
                 <Image
-                  source={require('../../../assets/images/오른쪽화살표꼬리X.png')}
+                  source={require('../../../assets/images/arrowrightnotail.png')}
                   style={[
                     healthStyles.arrowIcon,
                     !canGoRight && { tintColor: '#D0D0D0' }
@@ -194,7 +194,7 @@ export default function HealthDiaryList() {
         onPress={() => navigation.navigate('HealthDiaryEntry')}
       >
         <Image
-          source={require('../../../assets/images/플러스아이콘.png')}
+          source={require('../../../assets/images/plus.png')}
           style={healthStyles.addIcon}
           resizeMode="contain"
         />

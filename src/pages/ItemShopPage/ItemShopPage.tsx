@@ -90,8 +90,8 @@ export default function ShopPage({ navigation }: any) {
     bg1: any;
     bg2: any | null;
   }>({
-    bg1: require('../../../assets/images/MainBg.png'),
-    bg2: require('../../../assets/images/MainBg2.png'),
+    bg1: require('../../../assets/images/background.png'),
+    bg2: require('../../../assets/images/background2.png'),
   });
 
   useEffect(() => {
@@ -772,7 +772,7 @@ export default function ShopPage({ navigation }: any) {
               {points} 포인트
             </ScaledText>
             <Image
-              source={require('../../../assets/images/코인.png')}
+              source={require('../../../assets/images/coin.png')}
               style={styles.coinIcon}
               resizeMode="contain"
             />

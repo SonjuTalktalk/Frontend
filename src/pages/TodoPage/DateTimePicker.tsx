@@ -1,6 +1,6 @@
 // src/pages/TodoPage/DateTimePicker.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Modal,
   TouchableOpacity,
@@ -35,7 +35,14 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
   const [tempHour, setTempHour] = useState(value.getHours());
   const [tempMinute, setTempMinute] = useState(value.getMinutes());
 
-  // 모달 열릴 때마다 현재 value 기준으로 초기화 (기존 동작 유지)
+  // ScrollView ref들
+  const yearScrollRef = useRef<ScrollView>(null);
+  const monthScrollRef = useRef<ScrollView>(null);
+  const dayScrollRef = useRef<ScrollView>(null);
+  const hourScrollRef = useRef<ScrollView>(null);
+  const minuteScrollRef = useRef<ScrollView>(null);
+
+  // 모달 열릴 때마다 현재 value 기준으로 초기화
   useEffect(() => {
     if (visible) {
       setTempYear(value.getFullYear());
@@ -43,8 +50,33 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
       setTempDay(value.getDate());
       setTempHour(value.getHours());
       setTempMinute(value.getMinutes());
+
+      // 스크롤 위치 초기화 (약간의 딜레이를 줘서 렌더링 후 실행)
+      setTimeout(() => {
+        scrollToInitialPosition();
+      }, 100);
     }
   }, [visible, value]);
+
+  // 초기 스크롤 위치로 이동
+  const scrollToInitialPosition = () => {
+    if (mode === 'date') {
+      const currentYear = new Date().getFullYear();
+      const yearIndex = tempYear - (currentYear - 5);
+      const monthIndex = tempMonth;
+      const dayIndex = tempDay - 1;
+
+      yearScrollRef.current?.scrollTo({ y: yearIndex * ITEM_HEIGHT, animated: false });
+      monthScrollRef.current?.scrollTo({ y: monthIndex * ITEM_HEIGHT, animated: false });
+      dayScrollRef.current?.scrollTo({ y: dayIndex * ITEM_HEIGHT, animated: false });
+    } else {
+      const hourIndex = tempHour;
+      const minuteIndex = tempMinute;
+
+      hourScrollRef.current?.scrollTo({ y: hourIndex * ITEM_HEIGHT, animated: false });
+      minuteScrollRef.current?.scrollTo({ y: minuteIndex * ITEM_HEIGHT, animated: false });
+    }
+  };
 
   const getDaysInMonth = (year: number, month: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -91,6 +123,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
         {/* 년 */}
         <View style={styles.pickerColumn}>
           <ScrollView
+            ref={yearScrollRef}
             showsVerticalScrollIndicator={false}
             snapToInterval={ITEM_HEIGHT}
             decelerationRate="fast"
@@ -129,6 +162,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
         {/* 월 */}
         <View style={styles.pickerColumn}>
           <ScrollView
+            ref={monthScrollRef}
             showsVerticalScrollIndicator={false}
             snapToInterval={ITEM_HEIGHT}
             decelerationRate="fast"
@@ -164,6 +198,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
         {/* 일 */}
         <View style={styles.pickerColumn}>
           <ScrollView
+            ref={dayScrollRef}
             showsVerticalScrollIndicator={false}
             snapToInterval={ITEM_HEIGHT}
             decelerationRate="fast"
@@ -207,6 +242,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
         {/* 시 */}
         <View style={styles.pickerColumn}>
           <ScrollView
+            ref={hourScrollRef}
             showsVerticalScrollIndicator={false}
             snapToInterval={ITEM_HEIGHT}
             decelerationRate="fast"
@@ -241,6 +277,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
         {/* 분 */}
         <View style={styles.pickerColumn}>
           <ScrollView
+            ref={minuteScrollRef}
             showsVerticalScrollIndicator={false}
             snapToInterval={ITEM_HEIGHT}
             decelerationRate="fast"

@@ -1,10 +1,16 @@
 // src/pages/HealthPage/MedicationSettings.tsx
 import React, { useState } from 'react';
-import { View, ScrollView, Image, TouchableOpacity, Modal, TextInput } from 'react-native';
+import { View, ScrollView, Image, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
 import { healthStyles } from '../../styles/Health';
+import { DateTimePicker } from '../TodoPage/DateTimePicker';
+import {
+  deleteMedicineRoutine,
+  updateMedicineRoutine,
+  getMedicineRoutinesByDate,
+} from '../../api/medicineApi';
 
 const MEDICATION_STORAGE_KEY = '@medication_data';
 
@@ -85,6 +91,7 @@ export default function MedicationSettings() {
   useFocusEffect(
     React.useCallback(() => {
       loadMedicationData();
+      fetchMedicationFromServer();
     }, [])
   );
 
@@ -96,6 +103,76 @@ export default function MedicationSettings() {
       }
     } catch (error) {
       console.error('복약 데이터 로드 실패:', error);
+    }
+  };
+
+  // ✅ 서버에서 현재 날짜의 복약 데이터 가져오기
+  const fetchMedicationFromServer = async () => {
+    try {
+      const dateKey = formatDateForDisplay(currentDate); // YYYY/MM/DD
+      console.log('📥 서버에서 복약 데이터 조회:', dateKey);
+
+      const medications = await getMedicineRoutinesByDate(dateKey);
+
+      if (medications.length > 0) {
+        console.log('✅ 서버에서 받은 복약 데이터:', medications);
+
+        // 서버 데이터를 로컬 형식으로 변환
+        const stored = await AsyncStorage.getItem(MEDICATION_STORAGE_KEY);
+        const existingData = stored ? JSON.parse(stored) : {};
+
+        // 서버에서 받은 데이터로 해당 날짜의 복약 정보 재구성
+        medications.forEach(med => {
+          const medDateKey = formatDate(parseDate(med.medicine_date.replace(/-/g, '/'))); // YYYY-MM-DD -> YYYY-MM-DD
+          const timeSlots = getTimeSlots(String(med.medicine_daily));
+
+          if (!existingData[medDateKey]) {
+            existingData[medDateKey] = [];
+          }
+
+          timeSlots.forEach(slot => {
+            let targetSlot = existingData[medDateKey].find((s: TimeSlot) => s.time === slot.time);
+
+            if (!targetSlot) {
+              targetSlot = {
+                time: slot.time,
+                label: slot.label,
+                medications: []
+              };
+              existingData[medDateKey].push(targetSlot);
+            }
+
+            // 중복 체크
+            const exists = targetSlot.medications.some((m: MedicationItem) =>
+              m.name === med.medicine_name &&
+              m.startDate === med.medicine_date.replace(/-/g, '/')
+            );
+
+            if (!exists) {
+              const medId = `${medDateKey}-${slot.time}-${med.medicine_name}-${Date.now()}-${Math.random()}`;
+              targetSlot.medications.push({
+                id: medId,
+                name: med.medicine_name,
+                checked: false,
+                frequency: String(med.medicine_daily),
+                days: String(med.medicine_period),
+                startDate: med.medicine_date.replace(/-/g, '/'), // YYYY-MM-DD -> YYYY/MM/DD
+              });
+            }
+          });
+
+          // 시간 순서대로 정렬
+          existingData[medDateKey].sort((a: TimeSlot, b: TimeSlot) => {
+            const timeOrder = ['오전 8시', '오후 12시', '오후 6시', '오후 10시'];
+            return timeOrder.indexOf(a.time) - timeOrder.indexOf(b.time);
+          });
+        });
+
+        await AsyncStorage.setItem(MEDICATION_STORAGE_KEY, JSON.stringify(existingData));
+        setMedicationData(existingData);
+      }
+    } catch (error) {
+      console.error('❌ 서버에서 복약 데이터 가져오기 실패:', error);
     }
   };
 
@@ -118,12 +195,90 @@ export default function MedicationSettings() {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() - 1);
     setCurrentDate(newDate);
+    // 날짜 변경 시 서버에서 해당 날짜 데이터 가져오기
+    fetchMedicationForDate(newDate);
   };
 
   const handleNextDay = () => {
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + 1);
     setCurrentDate(newDate);
+    // 날짜 변경 시 서버에서 해당 날짜 데이터 가져오기
+    fetchMedicationForDate(newDate);
+  };
+
+  // ✅ 특정 날짜의 복약 데이터를 서버에서 가져오기
+  const fetchMedicationForDate = async (date: Date) => {
+    try {
+      const dateKey = formatDateForDisplay(date); // YYYY/MM/DD
+      console.log('📥 서버에서 복약 데이터 조회:', dateKey);
+
+      const medications = await getMedicineRoutinesByDate(dateKey);
+
+      if (medications.length > 0) {
+        console.log('✅ 서버에서 받은 복약 데이터:', medications);
+
+        // 서버 데이터를 로컬 형식으로 변환
+        const stored = await AsyncStorage.getItem(MEDICATION_STORAGE_KEY);
+        const existingData = stored ? JSON.parse(stored) : {};
+
+        // 해당 날짜의 기존 데이터는 서버 데이터로 덮어쓰기
+        const targetDateKey = formatDate(date);
+        existingData[targetDateKey] = [];
+
+        medications.forEach(med => {
+          const timeSlots = getTimeSlots(String(med.medicine_daily));
+
+          timeSlots.forEach(slot => {
+            let targetSlot = existingData[targetDateKey].find((s: TimeSlot) => s.time === slot.time);
+
+            if (!targetSlot) {
+              targetSlot = {
+                time: slot.time,
+                label: slot.label,
+                medications: []
+              };
+              existingData[targetDateKey].push(targetSlot);
+            }
+
+            const medId = `${targetDateKey}-${slot.time}-${med.medicine_name}-${Date.now()}-${Math.random()}`;
+            targetSlot.medications.push({
+              id: medId,
+              name: med.medicine_name,
+              checked: false,
+              frequency: String(med.medicine_daily),
+              days: String(med.medicine_period),
+              startDate: med.medicine_date.replace(/-/g, '/'), // YYYY-MM-DD -> YYYY/MM/DD
+            });
+          });
+
+          // 시간 순서대로 정렬
+          existingData[targetDateKey].sort((a: TimeSlot, b: TimeSlot) => {
+            const timeOrder = ['오전 8시', '오후 12시', '오후 6시', '오후 10시'];
+            return timeOrder.indexOf(a.time) - timeOrder.indexOf(b.time);
+          });
+        });
+
+        // 데이터가 없으면 빈 배열로 설정
+        if (existingData[targetDateKey].length === 0) {
+          delete existingData[targetDateKey];
+        }
+
+        await AsyncStorage.setItem(MEDICATION_STORAGE_KEY, JSON.stringify(existingData));
+        setMedicationData(existingData);
+      } else {
+        // 서버에 데이터가 없으면 해당 날짜 로컬 데이터도 삭제
+        const stored = await AsyncStorage.getItem(MEDICATION_STORAGE_KEY);
+        const existingData = stored ? JSON.parse(stored) : {};
+        const targetDateKey = formatDate(date);
+        delete existingData[targetDateKey];
+
+        await AsyncStorage.setItem(MEDICATION_STORAGE_KEY, JSON.stringify(existingData));
+        setMedicationData(existingData);
+      }
+    } catch (error) {
+      console.error('❌ 서버에서 복약 데이터 가져오기 실패:', error);
+    }
   };
 
   const toggleMedication = (slotIndex: number, medId: string) => {
@@ -198,7 +353,7 @@ export default function MedicationSettings() {
 
   const handleSaveEdit = async () => {
     if (!editingMed || !editedName.trim()) {
-      alert('약 이름을 입력해주세요.');
+      Alert.alert('알림', '약 이름을 입력해주세요.');
       return;
     }
 
@@ -208,6 +363,28 @@ export default function MedicationSettings() {
 
       const oldMedication = editingMed.medication;
 
+      // ✅ 1) 백엔드 루틴 수정 API 호출
+      if (oldMedication.startDate) {
+        try {
+          await updateMedicineRoutine(
+            oldMedication.name,
+            oldMedication.startDate,      // 화면용 날짜: YYYY/MM/DD
+            {
+              update_name: editedName,
+              update_daily: parseInt(editedFrequency),
+              update_period: parseInt(editedDays),
+              update_display_date: editedStartDate, // 화면용 날짜
+            }
+          );
+          console.log('✅ 서버 루틴 수정 성공');
+        } catch (apiErr) {
+          console.error('❌ 서버 루틴 수정 실패:', apiErr);
+          Alert.alert('오류', '서버에 루틴 수정 요청 중 오류가 발생했습니다.');
+          return;
+        }
+      }
+
+      // ✅ 2) (기존 로직) 로컬 AsyncStorage에서 예전 루틴 제거
       if (oldMedication.startDate && oldMedication.days && oldMedication.frequency) {
         const oldStart = parseDate(oldMedication.startDate);
         const oldDaysCount = parseInt(oldMedication.days);
@@ -227,7 +404,9 @@ export default function MedicationSettings() {
               );
             });
 
-            existingData[dateKey] = existingData[dateKey].filter((slot: TimeSlot) => slot.medications.length > 0);
+            existingData[dateKey] = existingData[dateKey].filter(
+              (slot: TimeSlot) => slot.medications.length > 0
+            );
 
             if (existingData[dateKey].length === 0) {
               delete existingData[dateKey];
@@ -236,6 +415,7 @@ export default function MedicationSettings() {
         }
       }
 
+      // ✅ 3) (기존 로직) 수정된 값으로 새 루틴 다시 채우기
       const start = parseDate(editedStartDate);
       const daysCount = parseInt(editedDays);
       const timeSlots = getTimeSlots(editedFrequency);
@@ -290,66 +470,104 @@ export default function MedicationSettings() {
       await AsyncStorage.setItem(MEDICATION_STORAGE_KEY, JSON.stringify(existingData));
       setMedicationData(existingData);
       closeEditModal();
+      Alert.alert('성공', '복약 정보가 수정되었습니다.');
     } catch (error) {
       console.error('복약 데이터 수정 실패:', error);
+      Alert.alert('오류', '복약 데이터 수정 중 오류가 발생했습니다.');
     }
   };
 
   const handleDeleteMedication = async () => {
     if (!editingMed) return;
 
-    try {
-      const stored = await AsyncStorage.getItem(MEDICATION_STORAGE_KEY);
-      const existingData = stored ? JSON.parse(stored) : {};
+    Alert.alert(
+      '삭제 확인',
+      '이 복약 알림을 삭제하시겠습니까?',
+      [
+        {
+          text: '취소',
+          style: 'cancel'
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const stored = await AsyncStorage.getItem(MEDICATION_STORAGE_KEY);
+              const existingData = stored ? JSON.parse(stored) : {};
 
-      const medication = editingMed.medication;
+              const medication = editingMed.medication;
 
-      if (medication.startDate && medication.days) {
-        const start = parseDate(medication.startDate);
-        const daysCount = parseInt(medication.days);
+              // ✅ 1) 서버에 루틴 삭제 요청
+              if (medication.startDate) {
+                try {
+                  await deleteMedicineRoutine(medication.name, medication.startDate);
+                  console.log('✅ 서버 루틴 삭제 성공');
+                } catch (apiErr) {
+                  console.error('❌ 서버 루틴 삭제 실패:', apiErr);
+                  Alert.alert('오류', '서버에 루틴 삭제 요청 중 오류가 발생했습니다.');
+                  return;
+                }
+              }
 
-        for (let i = 0; i < daysCount; i++) {
-          const currentDate = new Date(start);
-          currentDate.setDate(currentDate.getDate() + i);
-          const dateKey = formatDate(currentDate);
+              // ✅ 2) (기존 로직) 로컬에서 해당 루틴 제거
+              if (medication.startDate && medication.days) {
+                const start = parseDate(medication.startDate);
+                const daysCount = parseInt(medication.days);
 
-          if (existingData[dateKey]) {
-            existingData[dateKey].forEach((slot: TimeSlot) => {
-              slot.medications = slot.medications.filter(m =>
-                !(m.name === medication.name &&
-                  m.startDate === medication.startDate &&
-                  m.frequency === medication.frequency &&
-                  m.days === medication.days)
-              );
-            });
+                for (let i = 0; i < daysCount; i++) {
+                  const currentDate = new Date(start);
+                  currentDate.setDate(currentDate.getDate() + i);
+                  const dateKey = formatDate(currentDate);
 
-            existingData[dateKey] = existingData[dateKey].filter((slot: TimeSlot) => slot.medications.length > 0);
+                  if (existingData[dateKey]) {
+                    existingData[dateKey].forEach((slot: TimeSlot) => {
+                      slot.medications = slot.medications.filter(m =>
+                        !(m.name === medication.name &&
+                          m.startDate === medication.startDate &&
+                          m.frequency === medication.frequency &&
+                          m.days === medication.days)
+                      );
+                    });
 
-            if (existingData[dateKey].length === 0) {
-              delete existingData[dateKey];
+                    existingData[dateKey] = existingData[dateKey].filter(
+                      (slot: TimeSlot) => slot.medications.length > 0
+                    );
+
+                    if (existingData[dateKey].length === 0) {
+                      delete existingData[dateKey];
+                    }
+                  }
+                }
+              } else {
+                // startDate / days 정보가 없는 예외 케이스
+                const dateKey = editingMed.dateKey;
+                const updatedSlots = [...existingData[dateKey]];
+                updatedSlots[editingMed.slotIndex].medications.splice(editingMed.medIndex, 1);
+
+                const filteredSlots = updatedSlots.filter(
+                  (slot: TimeSlot) => slot.medications.length > 0
+                );
+
+                if (filteredSlots.length === 0) {
+                  delete existingData[dateKey];
+                } else {
+                  existingData[dateKey] = filteredSlots;
+                }
+              }
+
+              await AsyncStorage.setItem(MEDICATION_STORAGE_KEY, JSON.stringify(existingData));
+              setMedicationData(existingData);
+              closeEditModal();
+              Alert.alert('성공', '복약 알림이 삭제되었습니다.');
+            } catch (error) {
+              console.error('복약 데이터 삭제 실패:', error);
+              Alert.alert('오류', '복약 데이터 삭제 중 오류가 발생했습니다.');
             }
           }
         }
-      } else {
-        const dateKey = editingMed.dateKey;
-        const updatedSlots = [...existingData[dateKey]];
-        updatedSlots[editingMed.slotIndex].medications.splice(editingMed.medIndex, 1);
-
-        const filteredSlots = updatedSlots.filter(slot => slot.medications.length > 0);
-
-        if (filteredSlots.length === 0) {
-          delete existingData[dateKey];
-        } else {
-          existingData[dateKey] = filteredSlots;
-        }
-      }
-
-      await AsyncStorage.setItem(MEDICATION_STORAGE_KEY, JSON.stringify(existingData));
-      setMedicationData(existingData);
-      closeEditModal();
-    } catch (error) {
-      console.error('복약 데이터 삭제 실패:', error);
-    }
+      ]
+    );
   };
 
   const handleFrequencySelect = (freq: string) => {
@@ -362,21 +580,11 @@ export default function MedicationSettings() {
     setShowDaysPicker(false);
   };
 
-  const handleDateChange = (direction: 'prev' | 'next') => {
-    const currentDate = parseDate(editedStartDate);
-    if (direction === 'prev') {
-      currentDate.setDate(currentDate.getDate() - 1);
-    } else {
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    setEditedStartDate(formatDateForDisplay(currentDate));
-  };
-
   return (
     <View style={healthStyles.container}>
       <View style={healthStyles.header}>
         <TouchableOpacity style={healthStyles.backButton} onPress={() => navigation.goBack()}>
-          <Image source={require('../../../assets/images/왼쪽화살표.png')} style={healthStyles.backIcon} resizeMode="contain" />
+          <Image source={require('../../../assets/images/leftarrow.png')} style={healthStyles.backIcon} resizeMode="contain" />
         </TouchableOpacity>
         <ScaledText fontSize={24} style={healthStyles.headerTitle}>복약 알림 설정</ScaledText>
       </View>
@@ -386,11 +594,11 @@ export default function MedicationSettings() {
           <View style={healthStyles.dateCard}>
             <View style={healthStyles.dateSelector}>
               <TouchableOpacity style={healthStyles.dateArrow} onPress={handlePrevDay}>
-                <Image source={require('../../../assets/images/왼쪽화살표꼬리X.png')} style={healthStyles.arrowIcon} resizeMode="contain" />
+                <Image source={require('../../../assets/images/arrowleftnotail.png')} style={healthStyles.arrowIcon} resizeMode="contain" />
               </TouchableOpacity>
               <ScaledText fontSize={24} style={healthStyles.dateText}>{getDateLabel(currentDate)}</ScaledText>
               <TouchableOpacity style={healthStyles.dateArrow} onPress={handleNextDay}>
-                <Image source={require('../../../assets/images/오른쪽화살표꼬리X.png')} style={healthStyles.arrowIcon} resizeMode="contain" />
+                <Image source={require('../../../assets/images/arrowrightnotail.png')} style={healthStyles.arrowIcon} resizeMode="contain" />
               </TouchableOpacity>
             </View>
           </View>
@@ -412,7 +620,7 @@ export default function MedicationSettings() {
                         <ScaledText fontSize={18} style={healthStyles.medicationName}>{med.name}</ScaledText>
                       </TouchableOpacity>
                       <TouchableOpacity style={healthStyles.checkboxContainer} onPress={() => toggleMedication(slotIndex, med.id)}>
-                        <Image source={med.checked ? require('../../../assets/images/체크후아이콘.png') : require('../../../assets/images/체크아이콘.png')} style={healthStyles.checkIcon} resizeMode="contain" />
+                        <Image source={med.checked ? require('../../../assets/images/aftercheckicon.png') : require('../../../assets/images/checkicon.png')} style={healthStyles.checkIcon} resizeMode="contain" />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -423,7 +631,7 @@ export default function MedicationSettings() {
         </View>
       </ScrollView>
 
-      {/* 약 수정 모달 - 수정됨 */}
+      {/* 약 수정 모달 */}
       <Modal
         visible={editingMed !== null}
         transparent={true}
@@ -483,7 +691,7 @@ export default function MedicationSettings() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 투약 횟수 선택 모달 - 수정됨 */}
+      {/* 투약 횟수 선택 모달 */}
       <Modal visible={showFrequencyPicker} transparent={true} animationType="fade" onRequestClose={() => setShowFrequencyPicker(false)}>
         <TouchableOpacity
           style={healthStyles.modalOverlay}
@@ -508,7 +716,7 @@ export default function MedicationSettings() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 투약 일수 선택 모달 - 수정됨 */}
+      {/* 투약 일수 선택 모달 */}
       <Modal visible={showDaysPicker} transparent={true} animationType="fade" onRequestClose={() => setShowDaysPicker(false)}>
         <TouchableOpacity
           style={healthStyles.modalOverlay}
@@ -533,37 +741,19 @@ export default function MedicationSettings() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 날짜 선택 모달 - 수정됨 */}
-      <Modal visible={showDatePicker} transparent={true} animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
-        <TouchableOpacity
-          style={healthStyles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowDatePicker(false)}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <View style={healthStyles.datePickerModalContent}>
-              <ScaledText fontSize={20} style={healthStyles.modalTitle}>투약 시작일 선택</ScaledText>
-              <View style={healthStyles.datePickerContainer}>
-                <TouchableOpacity style={healthStyles.dateArrowButton} onPress={() => handleDateChange('prev')}>
-                  <Image source={require('../../../assets/images/왼쪽화살표꼬리X.png')} style={healthStyles.datePickerArrow} resizeMode="contain" />
-                </TouchableOpacity>
-                <ScaledText fontSize={22} style={healthStyles.datePickerText}>{editedStartDate}</ScaledText>
-                <TouchableOpacity style={healthStyles.dateArrowButton} onPress={() => handleDateChange('next')}>
-                  <Image source={require('../../../assets/images/오른쪽화살표꼬리X.png')} style={healthStyles.datePickerArrow} resizeMode="contain" />
-                </TouchableOpacity>
-              </View>
-              <View style={healthStyles.modalButtons}>
-                <TouchableOpacity style={healthStyles.modalCancelButton} onPress={() => setShowDatePicker(false)}>
-                  <ScaledText fontSize={16} style={healthStyles.modalCancelText}>취소</ScaledText>
-                </TouchableOpacity>
-                <TouchableOpacity style={healthStyles.modalConfirmButton} onPress={() => setShowDatePicker(false)}>
-                  <ScaledText fontSize={16} style={healthStyles.modalConfirmText}>확인</ScaledText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+      {/* 날짜 선택 – DateTimePicker 사용 */}
+      {showDatePicker && (
+        <DateTimePicker
+          visible={showDatePicker}
+          mode="date"
+          value={parseDate(editedStartDate || formatDateForDisplay(currentDate))}
+          onClose={() => setShowDatePicker(false)}
+          onConfirm={(selectedDate) => {
+            setEditedStartDate(formatDateForDisplay(selectedDate));
+            setShowDatePicker(false);
+          }}
+        />
+      )}
 
       {showAddMenu && (
         <>
@@ -580,7 +770,7 @@ export default function MedicationSettings() {
       )}
 
       <TouchableOpacity style={healthStyles.addButton} onPress={() => setShowAddMenu(!showAddMenu)}>
-        <Image source={require('../../../assets/images/플러스아이콘.png')} style={healthStyles.addIcon} resizeMode="contain" />
+        <Image source={require('../../../assets/images/plus.png')} style={healthStyles.addIcon} resizeMode="contain" />
       </TouchableOpacity>
     </View>
   );

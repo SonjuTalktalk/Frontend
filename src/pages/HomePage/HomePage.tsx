@@ -1,61 +1,41 @@
 // src/pages/HomePage/HomePage.tsx
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
 import { styles } from '../../styles/Home';
+import { useMission } from '../../contexts/MissionContext';
+import { getMyAIProfile } from '../../api/profileApi';
 import { usePoints } from '../../contexts/PointContext';
 import { getCurrentBackgrounds } from '../../utils/backgroundConfig';
 
-export default function HomePage({ navigation }: any) {
-  const { points } = usePoints();
-  const [equippedItems, setEquippedItems] = useState<{
-    [key: string]: string;
-  }>({});
-  const [sonjuName, setSonjuName] = useState('손주');
-  const [backgrounds, setBackgrounds] = useState<{
-    bg1: any;
-    bg2: any | null;
-  }>({
-    bg1: require('../../../assets/images/MainBg.png'),
-    bg2: require('../../../assets/images/MainBg2.png'),
-  });
+type EquippedItemsMap = { [key: string]: string };
 
-  // 화면이 포커스될 때마다 착용한 아이템, AI 프로필, 배경 로드
-  useFocusEffect(
-    React.useCallback(() => {
-      loadEquippedItems();
-      loadAiProfile();
-      loadBackground();
-    }, [])
-  );
+export default function HomePage({ navigation }: any) {
+  const { points, refreshPoints } = usePoints();
+
+  const [sonjuName, setSonjuName] = useState('손주');
+  const [equippedItems, setEquippedItems] = useState<EquippedItemsMap>({});
+  const [backgrounds, setBackgrounds] = useState<{
+      bg1: any;
+      bg2: any | null;
+    }>({
+      bg1: require('../../../assets/images/background.png'),
+      bg2: require('../../../assets/images/background2.png'),
+    });
 
   const loadEquippedItems = async () => {
     try {
-      const equipped = await AsyncStorage.getItem('equippedItems');
-      if (equipped) {
-        setEquippedItems(JSON.parse(equipped));
-      }
-    } catch (error) {
-      console.error('착용 아이템 로드 실패:', error);
-    }
-  };
+      const raw = await AsyncStorage.getItem('equippedItems');
+      if (!raw) return;
 
-  const loadAiProfile = async () => {
-    try {
-      const aiProfileStr = await AsyncStorage.getItem('aiProfile');
-      if (aiProfileStr) {
-        const aiProfile = JSON.parse(aiProfileStr);
-        console.log('✅ AI 프로필 로드:', aiProfile);
-        setSonjuName(aiProfile.nickname || '손주');
-      } else {
-        console.log('⚠️ AI 프로필 없음, 기본 이름 사용');
-        setSonjuName('손주');
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        setEquippedItems(parsed);
       }
-    } catch (error) {
-      console.error('AI 프로필 로드 실패:', error);
-      setSonjuName('손주');
+    } catch (e) {
+      console.log('장착 아이템 로드 실패:', e);
     }
   };
 
@@ -64,11 +44,42 @@ export default function HomePage({ navigation }: any) {
       const equippedBg = await AsyncStorage.getItem('equippedBackground');
       const bgs = getCurrentBackgrounds(equippedBg, 'main');
       setBackgrounds(bgs);
-      console.log('✅ 메인 배경 로드:', equippedBg || '기본 배경');
+      console.log('✅ 홈 배경 로드:', equippedBg || '기본 배경');
     } catch (error) {
       console.error('배경 로드 실패:', error);
     }
   };
+
+  const loadSonjuName = async () => {
+    try {
+      // 1) 로컬에서 빠르게
+      const localSonju = await AsyncStorage.getItem('sonjuName');
+      if (localSonju) setSonjuName(localSonju);
+
+      // 2) API에서 최신으로 갱신
+      try {
+        const aiProfile = await getMyAIProfile();
+        if (aiProfile?.nickname) {
+          setSonjuName(aiProfile.nickname);
+          await AsyncStorage.setItem('sonjuName', aiProfile.nickname);
+        }
+      } catch (apiError) {
+        console.log('AI 프로필 로드 실패 (로컬 데이터 사용):', apiError);
+      }
+    } catch (error) {
+      console.error('손주 이름 로드 실패:', error);
+    }
+  };
+
+  // 화면 포커스될 때마다 실행
+  useFocusEffect(
+    React.useCallback(() => {
+      loadSonjuName();
+      loadEquippedItems();
+      loadBackground();  // 배경 로드 추가
+      refreshPoints();
+    }, [])
+  );
 
   const getCharacterImage = () => {
     const equippedItemIds = Object.values(equippedItems);
@@ -88,7 +99,7 @@ export default function HomePage({ navigation }: any) {
     if (equippedItemIds.includes('crown')) {
       return require('../../../assets/images/KingSonju.png');
     }
-    if(equippedItemIds.includes('glasses')){
+    if (equippedItemIds.includes('glasses')) {
       return require('../../../assets/images/UniformSonju.png');
     }
 
@@ -99,18 +110,20 @@ export default function HomePage({ navigation }: any) {
     {
       id: 1,
       title: '건강',
-      image: require('../../../assets/images/건강아이콘.png'),
+      image: require('../../../assets/images/healthicon.png'),
       onPress: () => navigation.navigate('Health'),
     },
     {
       id: 2,
       title: '경제',
-      image: require('../../../assets/images/경제아이콘.png'),
+      image: require('../../../assets/images/economyicon.png'),
+      onPress: () => console.log('경제 눌림'),
     },
     {
       id: 3,
       title: '활동',
-      image: require('../../../assets/images/배움아이콘.png'),
+      image: require('../../../assets/images/activityicon.png'),
+      onPress: () => console.log('활동 눌림'),
     },
   ];
 
@@ -119,8 +132,7 @@ export default function HomePage({ navigation }: any) {
       {/* 배경 이미지 - 동적으로 변경 */}
       <Image
         source={backgrounds.bg1}
-        style={[styles.backgroundImage,
-          { transform: [{ scale: 1.0 }] }]}
+        style={styles.backgroundImage}
         resizeMode="cover"
       />
       {backgrounds.bg2 && (
@@ -137,14 +149,11 @@ export default function HomePage({ navigation }: any) {
           {quickMenus.map((menu) => (
             <TouchableOpacity
               key={menu.id}
-              style={[styles.quickMenu]}
+              style={styles.quickMenu}
               onPress={menu.onPress}
+              activeOpacity={0.8}
             >
-              <Image
-                source={menu.image}
-                style={styles.menuIcon}
-                resizeMode="contain"
-              />
+              <Image source={menu.image} style={styles.menuIcon} resizeMode="contain" />
               <ScaledText fontSize={18} style={styles.menuTitle}>
                 {menu.title}
               </ScaledText>
@@ -158,7 +167,6 @@ export default function HomePage({ navigation }: any) {
             {sonjuName}
           </ScaledText>
 
-          {/* 캐릭터 이미지 */}
           <View style={styles.characterContainer}>
             <Image
               source={getCharacterImage()}
@@ -166,13 +174,14 @@ export default function HomePage({ navigation }: any) {
               resizeMode="contain"
             />
 
-            {/* 메시지 아이콘 */}
+            {/* 메시지 버튼 */}
             <TouchableOpacity
               style={styles.messageButton}
               onPress={() => navigation.navigate('ChatMain')}
+              activeOpacity={0.8}
             >
               <Image
-                source={require('../../../assets/images/말풍선아이콘.png')}
+                source={require('../../../assets/images/bubble.png')}
                 style={styles.messageIcon}
                 resizeMode="contain"
               />
@@ -183,23 +192,22 @@ export default function HomePage({ navigation }: any) {
           {/* 포인트 영역 */}
           <View style={styles.pointContainer}>
             <View style={styles.pointSection}>
-                <ScaledText fontSize={24} style={styles.pointText}>
-                  {points} 포인트
-                </ScaledText>
-                <Image
-                  source={require('../../../assets/images/코인.png')}
-                  style={styles.Icons}
-                />
+              <ScaledText fontSize={24} style={styles.pointText}>
+                {points} 포인트
+              </ScaledText>
+              <Image source={require('../../../assets/images/coin.png')} style={styles.Icons} />
             </View>
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.pointSection}
               onPress={() => navigation.navigate('Shop')}
+              activeOpacity={0.8}
             >
               <ScaledText fontSize={18} style={styles.pointButton}>
                 꾸미기
               </ScaledText>
               <Image
-                source={require('../../../assets/images/오른쪽화살표.png')}
+                source={require('../../../assets/images/arrowright.png')}
                 style={styles.Icons}
               />
             </TouchableOpacity>
@@ -207,32 +215,27 @@ export default function HomePage({ navigation }: any) {
         </View>
       </ScrollView>
 
+      {/* 좌측 버튼들 */}
       <View style={styles.leftButtonsContainer}>
-        {/* 설정 버튼 */}
         <TouchableOpacity
           style={styles.leftButton}
-          onPress={() => {
-            console.log('설정 버튼 클릭');
-            navigation.navigate('Settings');
-          }}
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.8}
         >
           <Image
-            source={require('../../../assets/images/설정아이콘.png')}
+            source={require('../../../assets/images/setting.png')}
             style={styles.buttonIcon}
             resizeMode="contain"
           />
         </TouchableOpacity>
 
-        {/* 알림 버튼 */}
         <TouchableOpacity
           style={styles.leftButton}
-          onPress={() => {
-            console.log('알림 버튼 클릭');
-            navigation.navigate('Notification');
-          }}
+          onPress={() => navigation.navigate('Notification')}
+          activeOpacity={0.8}
         >
           <Image
-            source={require('../../../assets/images/알림아이콘.png')}
+            source={require('../../../assets/images/alarm.png')}
             style={styles.buttonIcon}
             resizeMode="contain"
           />

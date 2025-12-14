@@ -157,3 +157,12 @@ export const updateAIPreferences = async (
     throw error;
   }
 };
+
+export const updateFontSize = async (
+  size: 'small' | 'medium' | 'large'
+): Promise<string> => {
+  const response = await apiClient.patch<string>('/profile/me/fontsize', null, {
+    params: { size },
+  });
+  return response.data;
+};

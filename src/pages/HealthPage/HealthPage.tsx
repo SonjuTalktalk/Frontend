@@ -4,10 +4,8 @@ import { View, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
-import PageHeader from '../../components/common/PageHeader';
 import { healthStyles } from '../../styles/Health';
 import { getHealthMemosForMonth } from '../../api/healthApi';
-import { getCurrentBackgrounds } from '../../utils/backgroundConfig';
 
 const STORAGE_KEY = '@health_diary_entries';
 const STATUS_STORAGE_KEY = '@health_diary_status';
@@ -30,8 +28,8 @@ export default function HealthPage() {
     bg1: any;
     bg2: any | null;
   }>({
-    bg1: require('../../../assets/images/MainBg.png'),
-    bg2: require('../../../assets/images/MainBg2.png'),
+    bg1: require('../../../assets/images/healthbackground.png'),
+    bg2: require('../../../assets/images/background2.png'),
   });
 
   const currentYear = currentDate.getFullYear();
@@ -42,67 +40,88 @@ export default function HealthPage() {
 
   useFocusEffect(
     React.useCallback(() => {
-      loadBackground();
-      loadDiaryEntries();
+      loadDiaryEntriesFromServer();
       loadMedicationReminder();
     }, [currentYear, currentMonth])
   );
 
-  // ✅ 배경 로드 함수
-  const loadBackground = async () => {
+  // ✅ 서버에서 일지 + status 가져오기
+  const loadDiaryEntriesFromServer = async () => {
     try {
-      const equippedBg = await AsyncStorage.getItem('equippedBackground');
-      const bgs = getCurrentBackgrounds(equippedBg, 'health');
-      setBackgrounds(bgs);
-      console.log('✅ 건강 배경 로드:', equippedBg || '기본 배경');
-    } catch (error) {
-      console.error('배경 로드 실패:', error);
-    }
-  };
+      console.log(`📡 서버에서 ${currentYear}년 ${currentMonth + 1}월 데이터 요청 중...`);
 
-  const loadDiaryEntries = async () => {
-    try {
-      // 먼저 로컬 스토리지에서 로드 (빠른 표시)
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const localEntries = JSON.parse(stored);
-        // 현재 월의 데이터만 필터링
-        const filteredEntries: { [key: string]: string } = {};
-        Object.entries(localEntries).forEach(([date, content]) => {
-          if (date.startsWith(`${currentYear}/${String(currentMonth + 1).padStart(2, '0')}`)) {
-            // 문자열인지 확인
-            filteredEntries[date] = typeof content === 'string' ? content : '';
-          }
-        });
-        setDiaryEntries(filteredEntries);
-      }
+      // API에서 해당 월의 일지 + status 가져오기
+      const { memos, statuses } = await getHealthMemosForMonth(currentYear, currentMonth + 1);
 
-      // status 정보 로드
-      const statusStored = await AsyncStorage.getItem(STATUS_STORAGE_KEY);
-      if (statusStored) {
-        setDiaryStatuses(JSON.parse(statusStored));
-      }
+      console.log('📥 서버에서 받은 memos:', memos);
+      console.log('📥 서버에서 받은 statuses:', statuses);
 
-      // API에서 해당 월의 일지 가져오기 (최신 데이터로 업데이트)
-      const memos = await getHealthMemosForMonth(currentYear, currentMonth + 1);
-
-      // memos가 올바른 형식인지 확인
+      // ✅ memos와 statuses가 올바른 형식인지 확인
       const validatedMemos: { [key: string]: string } = {};
-      Object.entries(memos).forEach(([key, value]) => {
-        validatedMemos[key] = typeof value === 'string' ? value : '';
-      });
+      const validatedStatuses: { [key: string]: string } = {};
 
+      // memos 처리 (undefined 체크)
+      if (memos && typeof memos === 'object') {
+        Object.entries(memos).forEach(([key, value]) => {
+          validatedMemos[key] = typeof value === 'string' ? value : '';
+        });
+      }
+
+      // statuses 처리 (undefined 체크)
+      if (statuses && typeof statuses === 'object') {
+        Object.entries(statuses).forEach(([key, value]) => {
+          validatedStatuses[key] = typeof value === 'string' ? value : '';
+        });
+      }
+
+      // ✅ 상태 업데이트 (서버 데이터로)
       setDiaryEntries(validatedMemos);
+      setDiaryStatuses(validatedStatuses);
 
-      // 로컬 스토리지 전체 업데이트
+      // 로컬 스토리지에도 저장 (오프라인 대응)
       const allStored = await AsyncStorage.getItem(STORAGE_KEY);
       const allEntries = allStored ? JSON.parse(allStored) : {};
       Object.assign(allEntries, validatedMemos);
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(allEntries));
 
+      // status도 로컬 스토리지에 저장
+      const allStatusStored = await AsyncStorage.getItem(STATUS_STORAGE_KEY);
+      const allStatuses = allStatusStored ? JSON.parse(allStatusStored) : {};
+      Object.assign(allStatuses, statuses);
+      await AsyncStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(allStatuses));
+
+      console.log('✅ 서버 데이터로 업데이트 완료');
+      console.log('  - 일지 개수:', Object.keys(validatedMemos).length);
+      console.log('  - status 개수:', Object.keys(validatedStatuses).length);
+
     } catch (error) {
-      console.error('일지 데이터 로드 실패:', error);
-      // API 실패 시 로컬 스토리지 데이터 유지
+      console.error('❌ 서버에서 일지 데이터 로드 실패:', error);
+
+      // API 실패 시 로컬 스토리지 데이터 사용
+      try {
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        const statusStored = await AsyncStorage.getItem(STATUS_STORAGE_KEY);
+
+        if (stored) {
+          const localEntries = JSON.parse(stored);
+          const filteredEntries: { [key: string]: string } = {};
+          Object.entries(localEntries).forEach(([date, content]) => {
+            if (date.startsWith(`${currentYear}/${String(currentMonth + 1).padStart(2, '0')}`)) {
+              filteredEntries[date] = typeof content === 'string' ? content : '';
+            }
+          });
+          setDiaryEntries(filteredEntries);
+          console.log('📂 로컬 스토리지에서 일지 로드:', Object.keys(filteredEntries).length);
+        }
+
+        if (statusStored) {
+          const localStatuses = JSON.parse(statusStored);
+          setDiaryStatuses(localStatuses);
+          console.log('📂 로컬 스토리지에서 status 로드:', Object.keys(localStatuses).length);
+        }
+      } catch (localError) {
+        console.error('로컬 스토리지 로드도 실패:', localError);
+      }
     }
   };
 
@@ -224,16 +243,18 @@ export default function HealthPage() {
     return entry.trim().length > 0;
   };
 
-  // AI가 분석한 status 값 그대로 사용
+  // ✅ 서버에서 받은 status 값 그대로 사용
   const getStatusForDay = (day: number): StatusType => {
-    if (!hasEntryForDay(day)) return null;
-
     const dateKey = `${currentYear}/${String(currentMonth + 1).padStart(2, '0')}/${String(day).padStart(2, '0')}`;
     const status = diaryStatuses[dateKey];
 
-    if (!status) return null;
+    if (!status) {
+      console.log(`📍 ${dateKey}: status 없음`);
+      return null;
+    }
 
     const statusLower = status.toLowerCase();
+    console.log(`📍 ${dateKey}: status = ${statusLower}`);
 
     // healthy, warning, danger 그대로 반환
     if (statusLower === 'healthy' || statusLower === 'warning' || statusLower === 'danger') {
@@ -301,30 +322,23 @@ export default function HealthPage() {
 
   return (
     <View style={healthStyles.container}>
-      {/* ✅ 배경 이미지 - 동적으로 변경 */}
       <Image
-        source={backgrounds.bg1}
+        source={require('../../../assets/images/healthbackground.png')}
         style={healthStyles.backgroundImage}
         resizeMode="cover"
       />
-      {backgrounds.bg2 && (
-        <Image
-          source={backgrounds.bg2}
-          style={healthStyles.backgroundImage2}
-          resizeMode="cover"
-        />
-      )}
-
-      <Image
-        source={require('../../../assets/images/병원.png')}
-        style={healthStyles.hospitalImage}
-        resizeMode="contain"
-      />
-
-      <PageHeader
-        title="건강"
-        onBack={handleBackPress}
-      />
+      <View style={healthStyles.header}>
+        <TouchableOpacity style={healthStyles.backButton} onPress={handleBackPress}>
+          <Image
+            source={require('../../../assets/images/leftarrow.png')}
+            style={healthStyles.backIcon}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+        <ScaledText fontSize={24} style={healthStyles.headerTitle}>
+          건강
+        </ScaledText>
+      </View>
 
       <ScrollView contentContainerStyle={healthStyles.scrollContent}>
         <View style={healthStyles.heroSection}>
@@ -333,7 +347,7 @@ export default function HealthPage() {
             onPress={() => navigation.navigate('MedicationSettings')}
           >
             <Image
-              source={require('../../../assets/images/복약체크.png')}
+              source={require('../../../assets/images/healthcheck.png')}
               style={healthStyles.medicationButtonImage}
               resizeMode="contain"
             />
@@ -368,7 +382,7 @@ export default function HealthPage() {
             <View style={healthStyles.calendarMonthSelector}>
               <TouchableOpacity onPress={handlePrevMonth} style={healthStyles.monthArrowButton}>
                 <Image
-                  source={require('../../../assets/images/왼쪽화살표꼬리X.png')}
+                  source={require('../../../assets/images/arrowleftnotail.png')}
                   style={healthStyles.arrowIcon}
                   resizeMode="contain"
                 />
@@ -380,7 +394,7 @@ export default function HealthPage() {
 
               <TouchableOpacity onPress={handleNextMonth} style={healthStyles.monthArrowButton}>
                 <Image
-                  source={require('../../../assets/images/오른쪽화살표꼬리X.png')}
+                  source={require('../../../assets/images/arrowrightnotail.png')}
                   style={healthStyles.arrowIcon}
                   resizeMode="contain"
                 />
@@ -393,7 +407,7 @@ export default function HealthPage() {
                 onPress={() => navigation.navigate('HealthDiaryEntry')}
               >
                 <Image
-                  source={require('../../../assets/images/플러스아이콘.png')}
+                  source={require('../../../assets/images/plus.png')}
                   style={healthStyles.actionIcon}
                   resizeMode="contain"
                 />
@@ -403,7 +417,7 @@ export default function HealthPage() {
                 onPress={() => navigation.navigate('HealthDiaryList')}
               >
                 <Image
-                  source={require('../../../assets/images/목록아이콘.png')}
+                  source={require('../../../assets/images/list.png')}
                   style={healthStyles.actionIcon}
                   resizeMode="contain"
                 />
