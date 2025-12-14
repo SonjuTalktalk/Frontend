@@ -1,7 +1,27 @@
-pluginManagement { includeBuild("../node_modules/@react-native/gradle-plugin") }
-plugins { id("com.facebook.react.settings") }
-extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
-rootProject.name = 'SonjuProject'
-include ':app'
-includeBuild('../node_modules/@react-native/gradle-plugin')
+// android/settings.gradle
 
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google()
+        mavenCentral()
+    }
+
+    // React Native Gradle Plugin 위치
+    includeBuild("../node_modules/@react-native/gradle-plugin")
+}
+
+plugins {
+    id("com.facebook.react.settings")
+}
+
+// 자동 autolink 설정
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    ex.autolinkLibrariesFromCommand()
+}
+
+rootProject.name = "SonjuProject"
+include(":app")
+
+// (템플릿에 원래 있는 줄이면 유지)
+includeBuild("../node_modules/@react-native/gradle-plugin")

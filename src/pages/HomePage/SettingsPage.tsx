@@ -20,13 +20,13 @@ import {
   updateMyPremium,
   deleteMyAccount,
   getMyAIProfile,
-  updateAINickname
+  updateAINickname,
 } from '../../api/profileApi';
 import { apiClient } from '../../api/config';
 import { styles } from '../../styles/Setting';
 
 export default function SettingsPage() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const { fontScale, updateFontScale } = useFontSize();
 
   // State
@@ -37,7 +37,9 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [showSonjuNameModal, setShowSonjuNameModal] = useState(false);
+  const [showProfileImageModal, setShowProfileImageModal] = useState(false);
   const [tempName, setTempName] = useState('');
+  const [selectedProfile, setSelectedProfile] = useState<'여성' | '남성'>('여성');
 
   useEffect(() => {
     loadUserData();
@@ -48,9 +50,11 @@ export default function SettingsPage() {
       // 로컬 스토리지에서 빠르게 로드
       const localName = await AsyncStorage.getItem('userName');
       const localSonju = await AsyncStorage.getItem('sonjuName');
+      const localProfile = await AsyncStorage.getItem('profileImage');
 
       if (localName) setUserName(localName);
       if (localSonju) setSonjuName(localSonju);
+      if (localProfile) setSelectedProfile(localProfile as '여성' | '남성');
 
       // API에서 최신 프로필 정보 가져오기
       try {
@@ -89,31 +93,26 @@ export default function SettingsPage() {
 
     try {
       setIsLoading(true);
-
       const response = await updateMyName(tempName.trim());
-
       console.log('이름 변경 API 응답:', response);
 
       await AsyncStorage.setItem('userName', tempName.trim());
       setUserName(tempName.trim());
-
       setShowNameModal(false);
       setTempName('');
 
-      const message = typeof response === 'string'
-        ? response
-        : response?.message || '이름이 변경되었습니다';
-
+      const message =
+        typeof response === 'string'
+          ? response
+          : response?.message || '이름이 변경되었습니다';
       Alert.alert('성공', message);
-
     } catch (error: any) {
       console.error('이름 변경 실패:', error);
-
-      const errorMessage = error.response?.data?.detail
-        || error.response?.data?.message
-        || error.message
-        || '이름 변경에 실패했습니다';
-
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        '이름 변경에 실패했습니다';
       Alert.alert('오류', errorMessage);
     } finally {
       setIsLoading(false);
@@ -128,32 +127,41 @@ export default function SettingsPage() {
 
     try {
       setIsLoading(true);
-
       const response = await updateAINickname(tempName.trim());
-
       console.log('손주 이름 변경 API 응답:', response);
 
       await AsyncStorage.setItem('sonjuName', tempName.trim());
       setSonjuName(tempName.trim());
-
       setShowSonjuNameModal(false);
       setTempName('');
 
-      const message = typeof response === 'string'
-        ? response
-        : response?.message || '손주 이름이 변경되었습니다';
-
+      const message =
+        typeof response === 'string'
+          ? response
+          : response?.message || '손주 이름이 변경되었습니다';
       Alert.alert('성공', message);
-
     } catch (error: any) {
       console.error('손주 이름 변경 실패:', error);
-
-      const errorMessage = error.response?.data?.detail
-        || error.response?.data?.message
-        || error.message
-        || '손주 이름 변경에 실패했습니다';
-
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        '손주 이름 변경에 실패했습니다';
       Alert.alert('오류', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateProfileImage = async () => {
+    try {
+      setIsLoading(true);
+      await AsyncStorage.setItem('profileImage', selectedProfile);
+      setShowProfileImageModal(false);
+      Alert.alert('성공', '프로필 사진이 변경되었습니다');
+    } catch (error) {
+      console.error('프로필 사진 변경 실패:', error);
+      Alert.alert('오류', '프로필 사진 변경에 실패했습니다');
     } finally {
       setIsLoading(false);
     }
@@ -167,27 +175,27 @@ export default function SettingsPage() {
   const handleTogglePremium = async () => {
     try {
       setIsLoading(true);
-
       const newPremiumStatus = !isPremium;
       const response = await updateMyPremium(newPremiumStatus);
-
       console.log('프리미엄 상태 변경 API 응답:', response);
 
       setIsPremium(newPremiumStatus);
 
-      const message = typeof response === 'string'
-        ? response
-        : response?.message || (newPremiumStatus ? '프리미엄이 활성화되었습니다' : '프리미엄이 비활성화되었습니다');
-
+      const message =
+        typeof response === 'string'
+          ? response
+          : response?.message ||
+            (newPremiumStatus
+              ? '프리미엄이 활성화되었습니다'
+              : '프리미엄이 비활성화되었습니다');
       Alert.alert('성공', message);
     } catch (error: any) {
       console.error('프리미엄 상태 변경 실패:', error);
-
-      const errorMessage = error.response?.data?.detail
-        || error.response?.data?.message
-        || error.message
-        || '프리미엄 상태 변경에 실패했습니다';
-
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.response?.data?.message ||
+        error.message ||
+        '프리미엄 상태 변경에 실패했습니다';
       Alert.alert('오류', errorMessage);
     } finally {
       setIsLoading(false);
@@ -203,7 +211,6 @@ export default function SettingsPage() {
         onPress: async () => {
           try {
             setIsLoading(true);
-
             console.log('🔄 로그아웃 시작');
 
             await AsyncStorage.multiRemove([
@@ -217,30 +224,22 @@ export default function SettingsPage() {
               'userPhone',
               'sonjuName',
             ]);
-
             console.log('✅ AsyncStorage 정리 완료');
 
             delete apiClient.defaults.headers.common.Authorization;
-
             console.log('✅ API 헤더 정리 완료');
 
-            // RootNavigator가 감지할 때까지 짧은 대기
-            await new Promise(resolve => setTimeout(resolve, 100));
-
+            await new Promise((resolve) => setTimeout(resolve, 100));
             console.log('✅ 로그아웃 완료 - RootNavigator가 자동으로 화면 전환');
-
           } catch (error) {
             console.error('❌ 로그아웃 처리 중 오류:', error);
-
             try {
               await AsyncStorage.clear();
               delete apiClient.defaults.headers.common.Authorization;
             } catch (clearError) {
               console.error('❌ 강제 정리 실패:', clearError);
             }
-
             Alert.alert('알림', '로그아웃되었습니다');
-
           } finally {
             setIsLoading(false);
           }
@@ -261,30 +260,24 @@ export default function SettingsPage() {
           onPress: async () => {
             try {
               setIsLoading(true);
-
               await deleteMyAccount();
               await AsyncStorage.clear();
               delete apiClient.defaults.headers.common.Authorization;
-
               Alert.alert('완료', '계정이 삭제되었습니다');
-
-              // RootNavigator가 자동으로 화면 전환
-
             } catch (error: any) {
               console.error('계정 삭제 실패:', error);
-
-              const errorMessage = error.response?.data?.detail
-                || error.response?.data?.message
-                || error.message
-                || '계정 삭제에 실패했습니다';
-
+              const errorMessage =
+                error.response?.data?.detail ||
+                error.response?.data?.message ||
+                error.message ||
+                '계정 삭제에 실패했습니다';
               Alert.alert('오류', errorMessage);
             } finally {
               setIsLoading(false);
             }
           },
         },
-      ],
+      ]
     );
   };
 
@@ -295,6 +288,12 @@ export default function SettingsPage() {
     return '보통';
   };
 
+  const getProfileImage = () => {
+    return selectedProfile === '여성'
+      ? require('../../../assets/images/춘자.png')
+      : require('../../../assets/images/춘돌.png');
+  };
+
   return (
     <View style={styles.container}>
       {isLoading && (
@@ -303,29 +302,35 @@ export default function SettingsPage() {
         </View>
       )}
 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <ScaledText fontSize={24} style={styles.headerTitle}>
-          설정
-        </ScaledText>
-        <TouchableOpacity onPress={handleLogout} disabled={isLoading}>
-          <ScaledText fontSize={18} style={styles.logoutButton}>
-            로그아웃
+      <ScrollView style={styles.content}>
+        {/* 헤더 */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Image
+                source={require('../../../assets/images/leftarrow.png')}
+                style={styles.backIcon}
+                resizeMode="contain"
+              />
+          </TouchableOpacity>
+          <ScaledText fontSize={20} style={styles.headerTitle}>
+            설정
           </ScaledText>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity onPress={handleLogout}>
+            <ScaledText fontSize={16} style={styles.logoutButton}>
+              로그아웃
+            </ScaledText>
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* 프로필 이미지 */}
         <View style={styles.profileImageContainer}>
           <View style={styles.profileImageWrapper}>
-            <Image
-              source={require('../../../assets/images/춘자.png')}
-              style={styles.profileImage}
-            />
+            <Image source={getProfileImage()} style={styles.profileImage} />
           </View>
-          <ScaledText fontSize={20} style={styles.profileName}>
+          <ScaledText fontSize={18} style={styles.profileName}>
             {userName}
           </ScaledText>
         </View>
@@ -344,12 +349,15 @@ export default function SettingsPage() {
             }}
             disabled={isLoading}
           >
-            <ScaledText fontSize={18} style={styles.menuLabel}>
+            <ScaledText fontSize={16} style={styles.menuLabel}>
               이름 수정
             </ScaledText>
-            <ScaledText fontSize={18} style={styles.menuValue}>
-              {userName}
-            </ScaledText>
+            <View style={styles.menuRight}>
+              <ScaledText fontSize={16} style={styles.menuValue}>
+                {userName}
+              </ScaledText>
+              <Icon name="chevron-forward" size={20} color="#666" />
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -360,27 +368,30 @@ export default function SettingsPage() {
             }}
             disabled={isLoading}
           >
-            <ScaledText fontSize={18} style={styles.menuLabel}>
+            <ScaledText fontSize={16} style={styles.menuLabel}>
               손주 이름 수정
             </ScaledText>
-            <ScaledText fontSize={18} style={styles.menuValue}>
-              {sonjuName}
-            </ScaledText>
+            <View style={styles.menuRight}>
+              <ScaledText fontSize={16} style={styles.menuValue}>
+                {sonjuName}
+              </ScaledText>
+              <Icon name="chevron-forward" size={20} color="#666" />
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => Alert.alert('알림', '프로필 사진 변경 기능은 준비 중입니다')}
+            onPress={() => setShowProfileImageModal(true)}
             disabled={isLoading}
           >
-            <ScaledText fontSize={18} style={styles.menuLabel}>
+            <ScaledText fontSize={16} style={styles.menuLabel}>
               프로필 사진 변경
             </ScaledText>
             <View style={styles.menuRight}>
-              <ScaledText fontSize={18} style={styles.menuLink}>
-                준비 중
+              <ScaledText fontSize={16} style={styles.menuValue}>
+                {selectedProfile}
               </ScaledText>
-              <Icon name="chevron-forward" size={20} color="#02BFDC" />
+              <Icon name="chevron-forward" size={20} color="#666" />
             </View>
           </TouchableOpacity>
         </View>
@@ -396,30 +407,28 @@ export default function SettingsPage() {
             onPress={handleTogglePremium}
             disabled={isLoading}
           >
-            <ScaledText fontSize={18} style={styles.menuLabel}>
+            <ScaledText fontSize={16} style={styles.menuLabel}>
               프리미엄 상태
             </ScaledText>
             <View style={styles.menuRight}>
-              <ScaledText fontSize={18} style={[styles.menuValue, isPremium && { color: '#02BFDC', fontWeight: '600' }]}>
+              <ScaledText fontSize={16} style={styles.menuValue}>
                 {isPremium ? '활성화됨' : '비활성화됨'}
               </ScaledText>
+              <Icon name="chevron-forward" size={20} color="#666" />
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => Alert.alert('알림', '프리미엄 혜택 안내 기능은 준비 중입니다')}
+            onPress={() =>
+              Alert.alert('알림', '프리미엄 혜택 안내 기능은 준비 중입니다')
+            }
             disabled={isLoading}
           >
-            <ScaledText fontSize={18} style={styles.menuLabel}>
-              프리미엄 혜택
+            <ScaledText fontSize={16} style={styles.menuLabel}>
+              프리미엄 혜택 보기
             </ScaledText>
-            <View style={styles.menuRight}>
-              <ScaledText fontSize={18} style={styles.menuLink}>
-                보기
-              </ScaledText>
-              <Icon name="chevron-forward" size={20} color="#02BFDC" />
-            </View>
+            <Icon name="chevron-forward" size={20} color="#666" />
           </TouchableOpacity>
         </View>
 
@@ -431,17 +440,17 @@ export default function SettingsPage() {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => Alert.alert('알림', '개인정보 동의서 기능은 준비 중입니다')}
+            onPress={() =>
+              Alert.alert('알림', '개인정보 동의서 기능은 준비 중입니다')
+            }
             disabled={isLoading}
           >
-            <ScaledText fontSize={18} style={styles.menuLabel}>
+            <ScaledText fontSize={16} style={styles.menuLabel}>
               개인 정보 동의서 보기
             </ScaledText>
-            <View style={styles.menuRight}>
-              <ScaledText fontSize={18} style={styles.menuLink}>
-                보기
-              </ScaledText>
-            </View>
+            <ScaledText fontSize={16} style={styles.menuLink}>
+              보기
+            </ScaledText>
           </TouchableOpacity>
         </View>
 
@@ -456,14 +465,18 @@ export default function SettingsPage() {
             onPress={() => setShowFontSizeMenu(!showFontSizeMenu)}
             disabled={isLoading}
           >
-            <ScaledText fontSize={18} style={styles.menuLabel}>
+            <ScaledText fontSize={16} style={styles.menuLabel}>
               글자 크기 조정
             </ScaledText>
             <View style={styles.menuRight}>
-              <ScaledText fontSize={18} style={styles.menuValue}>
+              <ScaledText fontSize={16} style={styles.menuValue}>
                 {getFontSizeLabel()}
               </ScaledText>
-              <Icon name="chevron-down" size={20} color="#666" />
+              <Icon
+                name={showFontSizeMenu ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color="#666"
+              />
             </View>
           </TouchableOpacity>
 
@@ -473,11 +486,14 @@ export default function SettingsPage() {
                 style={styles.fontSizeOption}
                 onPress={() => handleChangeFontSize(0.9)}
               >
-                <ScaledText fontSize={18} style={styles.fontSizeLabel}>
+                <ScaledText fontSize={16} style={styles.fontSizeLabel}>
                   작게
                 </ScaledText>
-                {fontScale === 0.9 && <Icon name="checkmark" size={20} color="#02BFDC" />}
+                {fontScale === 0.9 && (
+                  <Icon name="checkmark" size={20} color="#02BFDC" />
+                )}
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={styles.fontSizeOption}
                 onPress={() => handleChangeFontSize(1.0)}
@@ -485,8 +501,11 @@ export default function SettingsPage() {
                 <ScaledText fontSize={16} style={styles.fontSizeLabel}>
                   보통
                 </ScaledText>
-                {fontScale === 1.0 && <Icon name="checkmark" size={20} color="#02BFDC" />}
+                {fontScale === 1.0 && (
+                  <Icon name="checkmark" size={20} color="#02BFDC" />
+                )}
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={styles.fontSizeOption}
                 onPress={() => handleChangeFontSize(1.1)}
@@ -494,23 +513,25 @@ export default function SettingsPage() {
                 <ScaledText fontSize={16} style={styles.fontSizeLabel}>
                   크게
                 </ScaledText>
-                {fontScale === 1.1 && <Icon name="checkmark" size={20} color="#02BFDC" />}
+                {fontScale === 1.1 && (
+                  <Icon name="checkmark" size={20} color="#02BFDC" />
+                )}
               </TouchableOpacity>
             </View>
           )}
         </View>
 
         {/* 계정 섹션 */}
-        <View style={[styles.section, { marginBottom: 40 }]}>
+        <View style={styles.section}>
           <ScaledText fontSize={18} style={styles.sectionTitle}>
             계정
           </ScaledText>
 
           <View style={styles.menuItem}>
-            <ScaledText fontSize={18} style={styles.menuLabel}>
+            <ScaledText fontSize={16} style={styles.menuLabel}>
               버전
             </ScaledText>
-            <ScaledText fontSize={18} style={styles.menuValue}>
+            <ScaledText fontSize={16} style={styles.menuValue}>
               1.0.0
             </ScaledText>
           </View>
@@ -520,35 +541,38 @@ export default function SettingsPage() {
             onPress={handleDeleteAccount}
             disabled={isLoading}
           >
-            <ScaledText fontSize={18} style={styles.menuLabel}>
+            <ScaledText fontSize={16} style={styles.menuLabel}>
               계정 삭제
             </ScaledText>
-            <View style={styles.menuRight}>
-              <ScaledText fontSize={18} style={styles.menuLink}>
-                삭제하기
-              </ScaledText>
-            </View>
+            <ScaledText fontSize={16} style={[styles.menuLink, { color: '#FF3B30' }]}>
+              삭제하기
+            </ScaledText>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => Alert.alert('알림', '고객센터 기능은 준비 중입니다')}
+            onPress={() =>
+              Alert.alert('알림', '고객센터 기능은 준비 중입니다')
+            }
             disabled={isLoading}
           >
-            <ScaledText fontSize={18} style={styles.menuLabel}>
+            <ScaledText fontSize={16} style={styles.menuLabel}>
               문의
             </ScaledText>
-            <View style={styles.menuRight}>
-              <ScaledText fontSize={18} style={styles.menuLink}>
-                고객센터로 이동
-              </ScaledText>
-            </View>
+            <ScaledText fontSize={16} style={styles.menuLink}>
+              고객센터로 이동
+            </ScaledText>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* 이름 수정 모달 */}
-      <Modal visible={showNameModal} transparent animationType="fade">
+      <Modal
+        visible={showNameModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowNameModal(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ScaledText fontSize={18} style={styles.modalTitle}>
@@ -558,9 +582,8 @@ export default function SettingsPage() {
               style={styles.modalInput}
               value={tempName}
               onChangeText={setTempName}
-              placeholder="새 이름을 입력하세요"
+              placeholder="새로운 이름을 입력하세요"
               autoFocus
-              editable={!isLoading}
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -571,7 +594,7 @@ export default function SettingsPage() {
                 }}
                 disabled={isLoading}
               >
-                <ScaledText fontSize={18} style={styles.modalButtonTextCancel}>
+                <ScaledText fontSize={16} style={styles.modalButtonTextCancel}>
                   취소
                 </ScaledText>
               </TouchableOpacity>
@@ -581,9 +604,9 @@ export default function SettingsPage() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator color="#fff" />
                 ) : (
-                  <ScaledText fontSize={18} style={styles.modalButtonTextConfirm}>
+                  <ScaledText fontSize={16} style={styles.modalButtonTextConfirm}>
                     확인
                   </ScaledText>
                 )}
@@ -594,7 +617,12 @@ export default function SettingsPage() {
       </Modal>
 
       {/* 손주 이름 수정 모달 */}
-      <Modal visible={showSonjuNameModal} transparent animationType="fade">
+      <Modal
+        visible={showSonjuNameModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSonjuNameModal(false)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ScaledText fontSize={18} style={styles.modalTitle}>
@@ -604,9 +632,8 @@ export default function SettingsPage() {
               style={styles.modalInput}
               value={tempName}
               onChangeText={setTempName}
-              placeholder="새 손주 이름을 입력하세요"
+              placeholder="새로운 손주 이름을 입력하세요"
               autoFocus
-              editable={!isLoading}
             />
             <View style={styles.modalButtons}>
               <TouchableOpacity
@@ -617,7 +644,7 @@ export default function SettingsPage() {
                 }}
                 disabled={isLoading}
               >
-                <ScaledText fontSize={18} style={styles.modalButtonTextCancel}>
+                <ScaledText fontSize={16} style={styles.modalButtonTextCancel}>
                   취소
                 </ScaledText>
               </TouchableOpacity>
@@ -627,9 +654,90 @@ export default function SettingsPage() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator color="#fff" />
                 ) : (
-                  <ScaledText fontSize={18} style={styles.modalButtonTextConfirm}>
+                  <ScaledText fontSize={16} style={styles.modalButtonTextConfirm}>
+                    확인
+                  </ScaledText>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 프로필 사진 변경 모달 */}
+      <Modal
+        visible={showProfileImageModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowProfileImageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScaledText fontSize={18} style={styles.modalTitle}>
+              프로필 사진 선택
+            </ScaledText>
+
+            <View style={{ gap: 16, marginBottom: 20 }}>
+              <TouchableOpacity
+                style={[
+                  styles.profileOption,
+                  selectedProfile === '여성' && styles.profileOptionSelected,
+                ]}
+                onPress={() => setSelectedProfile('여성')}
+              >
+                <Image
+                  source={require('../../../assets/images/춘자.png')}
+                  style={styles.profileOptionImage}
+                />
+                <ScaledText fontSize={16} style={styles.profileOptionText}>
+                  여성
+                </ScaledText>
+                {selectedProfile === '여성' && (
+                  <Icon name="checkmark-circle" size={24} color="#02BFDC" />
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.profileOption,
+                  selectedProfile === '남성' && styles.profileOptionSelected,
+                ]}
+                onPress={() => setSelectedProfile('남성')}
+              >
+                <Image
+                  source={require('../../../assets/images/춘돌.png')}
+                  style={styles.profileOptionImage}
+                />
+                <ScaledText fontSize={16} style={styles.profileOptionText}>
+                  남성
+                </ScaledText>
+                {selectedProfile === '남성' && (
+                  <Icon name="checkmark-circle" size={24} color="#02BFDC" />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setShowProfileImageModal(false)}
+                disabled={isLoading}
+              >
+                <ScaledText fontSize={16} style={styles.modalButtonTextCancel}>
+                  취소
+                </ScaledText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={handleUpdateProfileImage}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <ScaledText fontSize={16} style={styles.modalButtonTextConfirm}>
                     확인
                   </ScaledText>
                 )}
@@ -641,4 +749,3 @@ export default function SettingsPage() {
     </View>
   );
 }
-

@@ -61,7 +61,7 @@ export default function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              icon={require('../../assets/images/홈아이콘.png')}
+              icon={require('../../assets/images/homeicon.png')}
               label="홈"
             />
           ),
@@ -75,7 +75,7 @@ export default function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              icon={require('../../assets/images/투두아이콘.png')}
+              icon={require('../../assets/images/todoicon.png')}
               label="할 일"
             />
           ),
@@ -89,7 +89,7 @@ export default function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              icon={require('../../assets/images/채팅아이콘.png')}
+              icon={require('../../assets/images/chaticon.png')}
               label="채팅"
             />
           ),
@@ -109,7 +109,7 @@ export default function MainTabNavigator() {
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              icon={require('../../assets/images/미션아이콘.png')}
+              icon={require('../../assets/images/missionicon.png')}
               label="미션"
             />
           ),

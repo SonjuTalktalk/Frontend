@@ -301,31 +301,10 @@ const TodoListApp = () => {
                 }}
               >
                 <Image
-                  source={require('../../../assets/images/직접쓰기.png')}
+                  source={require('../../../assets/images/pencil.png')}
                   resizeMode="contain"
                 />
-                <ScaledText fontSize={20} style={styles.fabButtonText}>직접 쓰기</ScaledText>
-              </TouchableOpacity>
-            </Animated.View>
-
-            <Animated.View
-              style={[
-                styles.secondaryFab,
-                { transform: [{ translateY: voiceButtonTranslate }], opacity: buttonAnimation }
-              ]}
-            >
-              <TouchableOpacity
-                style={[styles.fabButton, styles.secondaryFabButton]}
-                onPress={() => {
-                  setShowAddModal(true);
-                  setShowButtons(false);
-                }}
-              >
-                <Image
-                  source={require('../../../assets/images/받아쓰기.png')}
-                  resizeMode="contain"
-                />
-                <ScaledText fontSize={20} style={styles.fabButtonText}>받아쓰기</ScaledText>
+                <ScaledText fontSize={20} style={styles.fabButtonText}>할일 추가</ScaledText>
               </TouchableOpacity>
             </Animated.View>
           </>
@@ -336,7 +315,7 @@ const TodoListApp = () => {
           onPress={() => setShowButtons(!showButtons)}
         >
           <Image
-            source={require('../../../assets/images/플러스아이콘.png')}
+            source={require('../../../assets/images/plus.png')}
             style={styles.plusIcon}
             resizeMode="contain"
           />
