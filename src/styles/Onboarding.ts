@@ -105,73 +105,71 @@ export const styles = StyleSheet.create({
       backgroundColor: '#FFFFFF',
   },
 
-  /* 성격 정하기 - 개선된 스타일 */
-  characterSection: {
-    width: '100%',
-    paddingHorizontal: 20,
-    marginBottom: 30,
-  },
+// 성격 선택 섹션
+characterSection: {
+  marginTop: 10,
+  paddingHorizontal: 20,
+},
 
-  sectionTitle: {
-    fontFamily: 'Pretendard-Bold',
-    fontSize: 20,
-    color: '#333',
-    marginBottom: 20,
-  },
+sectionTitle: {
+  fontFamily: 'Pretendard-Bold',
+  fontSize: 18,
+  color: '#222',
+  marginBottom: 12,
+},
 
-  optionsContainer: {
-    gap: 12,
-  },
+optionsContainer: {
+  gap: 12, // RN 0.71+ 지원. 안 되면 아래 참고(대체)
+},
 
-  optionButton: {
-    width: '100%',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    backgroundColor: '#F8F9FA',
-    borderWidth: 2,
-    borderColor: '#E9ECEF',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
+optionButton: {
+  paddingVertical: 14,
+  paddingHorizontal: 16,
+  borderRadius: 14,
+  borderWidth: 1,
+  borderColor: '#E9ECEF',
+  backgroundColor: '#FFFFFF',
+},
 
-  optionButtonSelected: {
-    backgroundColor: '#E8F9FC',
-    borderColor: '#02BFDC',
-    shadowColor: '#02BFDC',
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 2,
-  },
+optionButtonSelected: {
+  borderColor: '#02BFDC',
+  backgroundColor: 'rgba(2, 191, 220, 0.08)', // 살짝만
+},
 
-  optionText: {
-    fontFamily: 'Pretendard-SemiBold',
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 4,
-  },
+optionText: {
+  fontFamily: 'Pretendard-Bold',
+  fontSize: 16,
+  color: '#222',
+},
 
-  optionTextSelected: {
-    color: '#02BFDC',
-    fontFamily: 'Pretendard-Bold',
-  },
+optionTextSelected: {
+  color: '#02BFDC',
+},
 
-  optionDescription: {
-    fontFamily: 'Pretendard-Regular',
-    fontSize: 13,
-    color: '#868E96',
-    lineHeight: 18,
-  },
+optionDescription: {
+  marginTop: 6,
+  fontFamily: 'Pretendard-Regular',
+  fontSize: 16,
+  color: '#6B7280',
+  lineHeight: 18,
+},
 
-  optionDescriptionSelected: {
-    color: '#4DB8D0',
-  },
+optionDescriptionSelected: {
+  color: '#0891B2', // 선택 시 조금 진하게
+},
+
+premiumBadge: {
+  marginLeft: 8,
+  paddingHorizontal: 8,
+  paddingVertical: 3,
+  borderRadius: 999,
+  backgroundColor: '#FFE3E3',
+},
+premiumBadgeText: {
+  fontSize: 16,
+  fontFamily: 'Pretendard-Bold',
+  color: '#FF4D4F',
+},
 
   divider: {
     width: '100%',
@@ -187,7 +185,7 @@ export const styles = StyleSheet.create({
     },
 
     optionDescription: {
-      fontSize: 12,
+      fontSize: 16,
       color: '#6C757D',
       marginTop: 4,
       textAlign: 'center',

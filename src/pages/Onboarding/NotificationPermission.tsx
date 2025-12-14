@@ -29,8 +29,8 @@ export default function NotificationPermissionScreen({ navigation }: any) {
           console.log('✅ [NotificationPermission] FCM 초기화 성공');
           await AsyncStorage.setItem('notificationEnabled', 'true');
 
-          // 온보딩 완료로 이동
-          navigation.navigate('CharacterSetting', navigation.getState().params);
+          // 다음 온보딩 단계로 이동 (FontSizeSelector)
+          navigation.navigate('FontSizeSelector');
         } else {
           console.log('⚠️ [NotificationPermission] FCM 초기화 실패 - 계속 진행');
           Alert.alert(
@@ -39,7 +39,7 @@ export default function NotificationPermissionScreen({ navigation }: any) {
             [
               {
                 text: '확인',
-                onPress: () => navigation.navigate('CharacterSetting', navigation.getState().params),
+                onPress: () => navigation.navigate('FontSizeSelector'),
               },
             ]
           );
@@ -54,7 +54,7 @@ export default function NotificationPermissionScreen({ navigation }: any) {
           [
             {
               text: '확인',
-              onPress: () => navigation.navigate('CharacterSetting', navigation.getState().params),
+              onPress: () => navigation.navigate('FontSizeSelector'),
             },
           ]
         );
@@ -65,7 +65,7 @@ export default function NotificationPermissionScreen({ navigation }: any) {
         { text: '취소', style: 'cancel' },
         {
           text: '계속',
-          onPress: () => navigation.navigate('CharacterSetting', navigation.getState().params),
+          onPress: () => navigation.navigate('FontSizeSelector'),
         },
       ]);
     } finally {
@@ -76,7 +76,7 @@ export default function NotificationPermissionScreen({ navigation }: any) {
   const handleSkip = async () => {
     console.log('⏭️ [NotificationPermission] 알림 권한 건너뛰기');
     await AsyncStorage.setItem('notificationEnabled', 'false');
-    navigation.navigate('CharacterSetting', navigation.getState().params);
+    navigation.navigate('FontSizeSelector');
   };
 
   return (

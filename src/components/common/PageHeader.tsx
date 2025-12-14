@@ -24,7 +24,7 @@ export default function PageHeader({
         {onBack ? (
           <TouchableOpacity style={styles.backButton} onPress={onBack}>
             <Image
-              source={require('../../../assets/images/왼쪽화살표.png')}
+              source={require('../../../assets/images/leftarrow.png')}
               style={styles.backIcon}
               resizeMode="contain"
             />

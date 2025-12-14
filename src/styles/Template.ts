@@ -78,6 +78,7 @@ export const onboardingStyles = StyleSheet.create({
     fontSize: 24,
     color: '#777',
     marginTop: 10,
+    marginBottom: 10
   },
 
   maintext: {
@@ -228,4 +229,5 @@ scrollContainer: {
   height: 250,
   marginVertical: 40,
 },
+
 });

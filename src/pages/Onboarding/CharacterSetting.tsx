@@ -157,9 +157,6 @@ export default function CharacterSetting({ route, navigation }: any) {
         </View>
 
         <View style={styles.characterSection}>
-          <ScaledText fontSize={20} style={styles.sectionTitle}>
-            성격
-          </ScaledText>
           <View style={styles.optionsContainer}>
             {personalityOptions.map((option) => {
               const isSelected = selectedPersonality === option.value;
@@ -178,7 +175,7 @@ export default function CharacterSetting({ route, navigation }: any) {
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                       <ScaledText
-                        fontSize={16}
+                        fontSize={20}
                         style={[
                           styles.optionText,
                           isSelected && styles.optionTextSelected,
@@ -188,16 +185,19 @@ export default function CharacterSetting({ route, navigation }: any) {
                         {option.label}
                       </ScaledText>
                       {isDisabled && (
-                        <ScaledText fontSize={10} style={{ color: '#FF6B6B', fontWeight: 'bold', marginLeft: 6 }}>
-                          프리미엄
-                        </ScaledText>
+                        <View style={styles.premiumBadge}>
+                          <ScaledText fontSize={16} style={styles.premiumBadgeText}>
+                            프리미엄
+                          </ScaledText>
+                        </View>
                       )}
                     </View>
                   </View>
                   <ScaledText
-                    fontSize={13}
+                    fontSize={16}
                     style={[
                       styles.optionDescription,
+                      { alignSelf: 'flex-start', textAlign: 'left' },
                       isSelected && styles.optionDescriptionSelected,
                       isDisabled && { color: '#AAA' },
                     ]}
