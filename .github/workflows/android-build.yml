@@ -55,9 +55,34 @@ jobs:
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      # 9. 완성된 app-release.apk 업로드
-      - name: Upload Release APK
+      # 9. 완성된 app-release.apk 업로드 (Artifacts 탭용)
+      - name: Upload Artifact APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          
+      # -------------------------------------------------------------
+      # 10. ★★★ 릴리즈 태그 생성 (노션용 영구 URL 생성을 위해 추가) ★★★
+      - name: Create Release Tag
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }} # 릴리즈 태그 이름 (예: v1, v2)
+          release_name: App Release Build ${{ github.run_number }}
+          draft: false
+          prerelease: false
+
+      # 11. ★★★ 릴리즈에 APK 파일 첨부 (노션용 URL 생성) ★★★
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.sign_app.outputs.signedReleaseFile }} # 서명된 APK 경로
+          asset_name: app-release-v${{ github.run_number }}.apk
+          asset_content_type: application/vnd.android.package-archive
+      # -------------------------------------------------------------
