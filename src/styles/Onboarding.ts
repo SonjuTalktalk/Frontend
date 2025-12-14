@@ -105,55 +105,78 @@ export const styles = StyleSheet.create({
       backgroundColor: '#FFFFFF',
   },
 
-  /*성격 정하기 */
-    characterSection: {
-      width: '100%',
-      paddingHorizontal: 20,
-      marginBottom: 30,
-    },
+  /* 성격 정하기 - 개선된 스타일 */
+  characterSection: {
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
 
-    sectionTitle: {
-      fontFamily: 'Pretendard-Bold',
-      fontSize: 20,
-      color: '#333',
-      marginBottom: 15,
-    },
+  sectionTitle: {
+    fontFamily: 'Pretendard-Bold',
+    fontSize: 20,
+    color: '#333',
+    marginBottom: 20,
+  },
 
-    optionsContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 10,
-    },
+  optionsContainer: {
+    gap: 12,
+  },
 
-    optionButton: {
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      borderRadius: 20,
-      backgroundColor: '#E0E0E0',
-      minWidth: 80,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-
-    optionButtonSelected: {
-      backgroundColor: '#02BFDC',
-    },
-
-    optionText: {
-      fontFamily: 'Pretendard-Medium',
-      fontSize: 16,
-      color: '#666',
-    },
-
-    optionTextSelected: {
-      color: '#fff',
-      fontFamily: 'Pretendard-Bold',
-    },
-
-    divider: {
-      width: '100%',
+  optionButton: {
+    width: '100%',
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 2,
+    borderColor: '#E9ECEF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
       height: 1,
-      backgroundColor: '#E0E0E0',
-      marginVertical: 20,
     },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+
+  optionButtonSelected: {
+    backgroundColor: '#E8F9FC',
+    borderColor: '#02BFDC',
+    shadowColor: '#02BFDC',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  optionText: {
+    fontFamily: 'Pretendard-SemiBold',
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 4,
+  },
+
+  optionTextSelected: {
+    color: '#02BFDC',
+    fontFamily: 'Pretendard-Bold',
+  },
+
+  optionDescription: {
+    fontFamily: 'Pretendard-Regular',
+    fontSize: 13,
+    color: '#868E96',
+    lineHeight: 18,
+  },
+
+  optionDescriptionSelected: {
+    color: '#4DB8D0',
+  },
+
+  divider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 20,
+  },
 });
