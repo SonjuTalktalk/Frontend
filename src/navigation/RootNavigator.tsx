@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View, AppState, AppStateStatus, DeviceEventEmitter } from 'react-native';
@@ -40,44 +40,63 @@ export default function RootNavigator() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // ✅ 마지막으로 찍은 값을 저장해서 "변경될 때만" 로그
+  const lastLoggedRef = useRef<{
+    accessToken: string | null;
+    hasCompletedOnboarding: string | null;
+  }>({ accessToken: null, hasCompletedOnboarding: null });
+
+  const maskToken = (token: string | null) => {
+    if (!token) return null;
+    if (token.length <= 12) return `${token.slice(0, 4)}...${token.slice(-2)}`;
+    return `${token.slice(0, 8)}...${token.slice(-4)} (len=${token.length})`;
+  };
+
   useEffect(() => {
-        checkLoginStatus();
+    checkLoginStatus();
 
-        // AsyncStorage 변경 감지를 위한 interval 설정
-        const interval = setInterval(() => {
-          checkLoginStatus();
-        }, 200); // 200ms마다 체크
+    const interval = setInterval(() => {
+      checkLoginStatus();
+    }, 200);
 
-        return () => clearInterval(interval);
-      }, []); // 의존성 배열 비움
+    return () => clearInterval(interval);
+  }, []);
 
-
-    const checkLoginStatus = async () => {
-      try {
-        if (DEBUG_MODE) {
-          setIsLoggedIn(true);
-          setIsLoading(false);
-          return;
-        }
-
-        // accessToken과 온보딩 완료 여부로 로그인 상태 판단
-        const token = await AsyncStorage.getItem('accessToken');
-        const hasCompletedOnboarding = await AsyncStorage.getItem('hasCompletedOnboarding');
-
-        const newLoginState = !!token && hasCompletedOnboarding === 'true';
-
-        // 항상 상태 업데이트 (React가 자동으로 동일한 값은 무시함)
-        setIsLoggedIn(newLoginState);
-
-        console.log(`🔍 [RootNavigator] 상태 체크 - 토큰: ${!!token}, 온보딩: ${hasCompletedOnboarding}, 로그인: ${newLoginState}`);
-      } catch (error) {
-        console.error('❌ [RootNavigator] 로그인 상태 확인 실패:', error);
-      } finally {
-        if (isLoading) {
-          setIsLoading(false);
-        }
+  const checkLoginStatus = async () => {
+    try {
+      if (DEBUG_MODE) {
+        setIsLoggedIn(true);
+        setIsLoading(false);
+        return;
       }
-    };
+
+      const token = await AsyncStorage.getItem('accessToken');
+      const hasCompletedOnboarding = await AsyncStorage.getItem('hasCompletedOnboarding');
+
+      const newLoginState = !!token && hasCompletedOnboarding === 'true';
+      setIsLoggedIn(newLoginState);
+
+      // ✅ 토큰/온보딩 상태가 바뀐 경우에만 로그 출력
+      const last = lastLoggedRef.current;
+      const changed =
+        last.accessToken !== token || last.hasCompletedOnboarding !== hasCompletedOnboarding;
+
+      if (changed) {
+        console.log('🔐 [RootNavigator] accessToken:', maskToken(token));
+        console.log('🔍 [RootNavigator] hasCompletedOnboarding:', hasCompletedOnboarding);
+        console.log('✅ [RootNavigator] isLoggedIn:', newLoginState);
+
+        lastLoggedRef.current = {
+          accessToken: token,
+          hasCompletedOnboarding,
+        };
+      }
+    } catch (error) {
+      console.error('❌ [RootNavigator] 로그인 상태 확인 실패:', error);
+    } finally {
+      if (isLoading) setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (

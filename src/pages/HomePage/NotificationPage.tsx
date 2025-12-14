@@ -62,7 +62,7 @@ export default function NotificationPage() {
           onPress={() => navigation.goBack()}
         >
           <Image
-            source={require('../../../assets/images/왼쪽화살표.png')}
+            source={require('../../../assets/images/leftarrow.png')}
             style={styles.backIcon}
             resizeMode="contain"
           />

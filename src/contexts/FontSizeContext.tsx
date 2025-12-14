@@ -1,6 +1,7 @@
 // src/contexts/FontSizeContext.tsx
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { updateFontSize as updateFontSizeAPI } from '../api/profileApi';
 
 interface FontSizeContextType {
   fontScale: number;
@@ -32,12 +33,32 @@ export const FontSizeProvider: React.FC<FontSizeProviderProps> = ({ children }) 
     }
   };
 
+  // scale을 API 형식으로 변환
+  const scaleToApiSize = (scale: number): 'small' | 'medium' | 'large' => {
+    if (scale === 0.9) return 'small';
+    if (scale === 1.1) return 'large';
+    return 'medium';
+  };
+
   const updateFontScale = async (scale: number): Promise<void> => {
     try {
+      // 1. 로컬 먼저 업데이트 (빠른 UI 반응)
       setFontScale(scale);
       await AsyncStorage.setItem('fontScale', scale.toString());
+      console.log('✅ 로컬 폰트 크기 저장:', scale);
+
+      // 2. 서버 API 호출
+      try {
+        const apiSize = scaleToApiSize(scale);
+        const response = await updateFontSizeAPI(apiSize);
+        console.log('✅ 서버 폰트 크기 업데이트 성공:', response);
+      } catch (apiError) {
+        console.error('❌ 서버 폰트 크기 업데이트 실패 (로컬은 유지):', apiError);
+        // API 실패해도 로컬은 이미 업데이트됨
+      }
     } catch (error) {
-      console.error('글자 크기 저장 실패:', error);
+      console.error('❌ 폰트 크기 저장 실패:', error);
+      throw error;
     }
   };
 

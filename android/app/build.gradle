@@ -116,6 +116,9 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // react-native-image-crop-picker 추가
+    implementation 'com.github.yalantis:ucrop:2.2.8'
 }
 
 project.ext.vectoricons = [ iconFontNames: [ 'Ionicons.ttf' ] ]

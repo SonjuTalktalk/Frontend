@@ -1,136 +1,81 @@
-// src/pages/HomePage/HomePage.tsx
+// src/pages/HomePage/HomePage.tsx (업데이트)
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
 import { styles } from '../../styles/Home';
-import { usePoints } from '../../contexts/PointContext';
-import { getCurrentBackgrounds } from '../../utils/backgroundConfig';
+import { useMission } from '../../contexts/MissionContext';
+import { getMyAIProfile } from '../../api/profileApi';
 
 export default function HomePage({ navigation }: any) {
-  const { points } = usePoints();
-  const [equippedItems, setEquippedItems] = useState<{
-    [key: string]: string;
-  }>({});
-  const [sonjuName, setSonjuName] = useState('손주');
-  const [backgrounds, setBackgrounds] = useState<{
-    bg1: any;
-    bg2: any | null;
-  }>({
-    bg1: require('../../../assets/images/배경.png'),
-    bg2: require('../../../assets/images/배경2.png'),
-  });
+  const { totalPoints } = useMission();
+  const [sonjuName, setSonjuName] = useState('돌쇠');
 
-  // 화면이 포커스될 때마다 착용한 아이템, AI 프로필, 배경 로드
-  useFocusEffect(
-    React.useCallback(() => {
-      loadEquippedItems();
-      loadAiProfile();
-      loadBackground();
-    }, [])
-  );
+  useEffect(() => {
+    loadSonjuName();
 
-  const loadEquippedItems = async () => {
+    // 화면이 포커스될 때마다 손주 이름 새로고침
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadSonjuName();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadSonjuName = async () => {
     try {
-      const equipped = await AsyncStorage.getItem('equippedItems');
-      if (equipped) {
-        setEquippedItems(JSON.parse(equipped));
+      // 로컬 스토리지에서 빠르게 로드
+      const localSonju = await AsyncStorage.getItem('sonjuName');
+      if (localSonju) setSonjuName(localSonju);
+
+      // API에서 최신 정보 가져오기
+      try {
+        const aiProfile = await getMyAIProfile();
+        if (aiProfile?.nickname) {
+          setSonjuName(aiProfile.nickname);
+          await AsyncStorage.setItem('sonjuName', aiProfile.nickname);
+        }
+      } catch (apiError) {
+        console.log('AI 프로필 로드 실패 (로컬 데이터 사용):', apiError);
       }
     } catch (error) {
-      console.error('착용 아이템 로드 실패:', error);
+      console.error('손주 이름 로드 실패:', error);
     }
-  };
-
-  const loadAiProfile = async () => {
-    try {
-      const aiProfileStr = await AsyncStorage.getItem('aiProfile');
-      if (aiProfileStr) {
-        const aiProfile = JSON.parse(aiProfileStr);
-        console.log('✅ AI 프로필 로드:', aiProfile);
-        setSonjuName(aiProfile.nickname || '손주');
-      } else {
-        console.log('⚠️ AI 프로필 없음, 기본 이름 사용');
-        setSonjuName('손주');
-      }
-    } catch (error) {
-      console.error('AI 프로필 로드 실패:', error);
-      setSonjuName('손주');
-    }
-  };
-
-  const loadBackground = async () => {
-    try {
-      const equippedBg = await AsyncStorage.getItem('equippedBackground');
-      const bgs = getCurrentBackgrounds(equippedBg, 'main');
-      setBackgrounds(bgs);
-      console.log('✅ 메인 배경 로드:', equippedBg || '기본 배경');
-    } catch (error) {
-      console.error('배경 로드 실패:', error);
-    }
-  };
-
-  const getCharacterImage = () => {
-    const equippedItemIds = Object.values(equippedItems);
-
-    if (equippedItemIds.includes('ribbon')) {
-      return require('../../../assets/images/리본손주.png');
-    }
-    if (equippedItemIds.includes('hiking-hat')) {
-      return require('../../../assets/images/등산손주.png');
-    }
-    if (equippedItemIds.includes('bunny-band')) {
-      return require('../../../assets/images/토끼손주.png');
-    }
-    if (equippedItemIds.includes('wizard-hat')) {
-      return require('../../../assets/images/마법사손주.png');
-    }
-    if (equippedItemIds.includes('crown')) {
-      return require('../../../assets/images/왕손주.png');
-    }
-    if(equippedItemIds.includes('glasses')){
-      return require('../../../assets/images/교복손주.png');
-    }
-
-    return require('../../../assets/images/sonjusmile.png');
   };
 
   const quickMenus = [
     {
       id: 1,
       title: '건강',
-      image: require('../../../assets/images/건강아이콘.png'),
+      image: require('../../../assets/images/healthicon.png'),
       onPress: () => navigation.navigate('Health'),
     },
     {
       id: 2,
       title: '경제',
-      image: require('../../../assets/images/경제아이콘.png'),
+      image: require('../../../assets/images/economyicon.png'),
     },
     {
       id: 3,
       title: '활동',
-      image: require('../../../assets/images/배움아이콘.png'),
+      image: require('../../../assets/images/activityicon.png'),
     },
   ];
 
   return (
     <View style={styles.container}>
-      {/* 배경 이미지 - 동적으로 변경 */}
+      {/* 배경 이미지 */}
       <Image
-        source={backgrounds.bg1}
-        style={[styles.backgroundImage,
-          { transform: [{ scale: 1.0 }] }]}
+        source={require('../../../assets/images/background.png')}
+        style={styles.backgroundImage}
         resizeMode="cover"
       />
-      {backgrounds.bg2 && (
-        <Image
-          source={backgrounds.bg2}
-          style={styles.backgroundImage2}
-          resizeMode="cover"
-        />
-      )}
-
+      <Image
+        source={require('../../../assets/images/background2.png')}
+        style={styles.backgroundImage2}
+        resizeMode="cover"
+      />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 퀵 메뉴 */}
         <View style={styles.quickMenuContainer}>
@@ -161,7 +106,7 @@ export default function HomePage({ navigation }: any) {
           {/* 캐릭터 이미지 */}
           <View style={styles.characterContainer}>
             <Image
-              source={getCharacterImage()}
+              source={require('../../../assets/images/sonjusmile.png')}
               style={styles.characterImage}
               resizeMode="contain"
             />
@@ -172,7 +117,7 @@ export default function HomePage({ navigation }: any) {
               onPress={() => navigation.navigate('ChatMain')}
             >
               <Image
-                source={require('../../../assets/images/말풍선아이콘.png')}
+                source={require('../../../assets/images/bubble.png')}
                 style={styles.messageIcon}
                 resizeMode="contain"
               />
@@ -184,17 +129,14 @@ export default function HomePage({ navigation }: any) {
           <View style={styles.pointContainer}>
             <View style={styles.pointSection}>
                 <ScaledText fontSize={24} style={styles.pointText}>
-                  {points} 포인트
+                  {totalPoints} 포인트
                 </ScaledText>
                 <Image
-                  source={require('../../../assets/images/코인.png')}
+                  source={require('../../../assets/images/coin.png')}
                   style={styles.Icons}
                 />
             </View>
-            <TouchableOpacity 
-              style={styles.pointSection}
-              onPress={() => navigation.navigate('Shop')}
-            >
+            <TouchableOpacity style={styles.pointSection}>
               <ScaledText fontSize={18} style={styles.pointButton}>
                 꾸미기
               </ScaledText>
@@ -217,7 +159,7 @@ export default function HomePage({ navigation }: any) {
           }}
         >
           <Image
-            source={require('../../../assets/images/설정아이콘.png')}
+            source={require('../../../assets/images/setting.png')}
             style={styles.buttonIcon}
             resizeMode="contain"
           />
@@ -232,7 +174,7 @@ export default function HomePage({ navigation }: any) {
           }}
         >
           <Image
-            source={require('../../../assets/images/알림아이콘.png')}
+            source={require('../../../assets/images/alarm.png')}
             style={styles.buttonIcon}
             resizeMode="contain"
           />
