@@ -98,12 +98,14 @@ const ChatRoom = () => {
           contentContainerStyle={styles.messagesContent}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
-          <View style={styles.characterHeader}>
-            <View style={styles.characterPlaceholder} />
-          </View>
 
+          {/* ✅ chatListNum 전달 */}
           {currentChat?.messages.map((message) => (
-            <ChatBubble key={message.id} message={message} />
+            <ChatBubble
+              key={message.id}
+              message={message}
+              chatListNum={currentChat.chat_list_num}
+            />
           ))}
 
           {isLoading && (

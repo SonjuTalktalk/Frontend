@@ -360,8 +360,8 @@ export default function SettingsPage() {
 
   const getProfileImage = () => {
     return selectedProfile === '여성'
-      ? require('../../../assets/images/춘자.png')
-      : require('../../../assets/images/춘돌.png');
+      ? require('../../../assets/images/choonja.png')
+      : require('../../../assets/images/choondol.png');
   };
 
   return (
@@ -782,7 +782,7 @@ export default function SettingsPage() {
                 onPress={() => setSelectedProfile('여성')}
               >
                 <Image
-                  source={require('../../../assets/images/춘자.png')}
+                  source={require('../../../assets/images/choonja.png')}
                   style={styles.profileOptionImage}
                 />
                 <ScaledText fontSize={16} style={styles.profileOptionText}>
@@ -801,7 +801,7 @@ export default function SettingsPage() {
                 onPress={() => setSelectedProfile('남성')}
               >
                 <Image
-                  source={require('../../../assets/images/춘돌.png')}
+                  source={require('../../../assets/images/choondol.png')}
                   style={styles.profileOptionImage}
                 />
                 <ScaledText fontSize={16} style={styles.profileOptionText}>

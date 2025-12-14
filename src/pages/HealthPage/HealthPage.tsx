@@ -23,6 +23,15 @@ export default function HealthPage() {
   const [reminderTimeText, setReminderTimeText] = useState<string>('—');
   const [reminderDescription, setReminderDescription] = useState<string>('오늘 복약 알림이 없습니다.');
 
+  // ✅ 배경 시스템 상태
+  const [backgrounds, setBackgrounds] = useState<{
+    bg1: any;
+    bg2: any | null;
+  }>({
+    bg1: require('../../../assets/images/healthbackground.png'),
+    bg2: require('../../../assets/images/background2.png'),
+  });
+
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
 
@@ -314,7 +323,7 @@ export default function HealthPage() {
   return (
     <View style={healthStyles.container}>
       <Image
-        source={require('../../../assets/images/healthbackground.jpg')}
+        source={require('../../../assets/images/healthbackground.png')}
         style={healthStyles.backgroundImage}
         resizeMode="cover"
       />
@@ -373,7 +382,7 @@ export default function HealthPage() {
             <View style={healthStyles.calendarMonthSelector}>
               <TouchableOpacity onPress={handlePrevMonth} style={healthStyles.monthArrowButton}>
                 <Image
-                  source={require('../../../assets/images/왼쪽화살표꼬리X.png')}
+                  source={require('../../../assets/images/arrowleftnotail.png')}
                   style={healthStyles.arrowIcon}
                   resizeMode="contain"
                 />
@@ -385,7 +394,7 @@ export default function HealthPage() {
 
               <TouchableOpacity onPress={handleNextMonth} style={healthStyles.monthArrowButton}>
                 <Image
-                  source={require('../../../assets/images/오른쪽화살표꼬리X.png')}
+                  source={require('../../../assets/images/arrowrightnotail.png')}
                   style={healthStyles.arrowIcon}
                   resizeMode="contain"
                 />
