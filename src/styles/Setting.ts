@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#B8E9F5', fontFamily: 'Pretendard-Medium' },
   loadingOverlay: {
     position: 'absolute',
@@ -16,7 +16,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
   },
@@ -88,4 +87,30 @@ const styles = StyleSheet.create({
   modalButtonConfirm: { backgroundColor: '#02BFDC' },
   modalButtonTextCancel: { color: '#666', fontWeight: '600' },
   modalButtonTextConfirm: { color: '#fff', fontWeight: '600' },
+
+  // styles/Setting.ts에 추가
+    profileOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderWidth: 2,
+      borderColor: '#E0E0E0',
+      borderRadius: 12,
+      gap: 12,
+    },
+    profileOptionSelected: {
+      borderColor: '#02BFDC',
+      backgroundColor: '#F0FBFD',
+    },
+    profileOptionImage: {
+      width: 60,
+      height: 60,
+      resizeMode: 'contain',
+    },
+    profileOptionText: {
+      flex: 1,
+      fontWeight: '600',
+      color: '#000',
+    },
+
 });

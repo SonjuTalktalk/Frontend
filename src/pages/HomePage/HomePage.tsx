@@ -1,29 +1,65 @@
 // src/pages/HomePage/HomePage.tsx (업데이트)
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
 import { styles } from '../../styles/Home';
 import { useMission } from '../../contexts/MissionContext';
+import { getMyAIProfile } from '../../api/profileApi';
 
 export default function HomePage({ navigation }: any) {
   const { totalPoints } = useMission();
+  const [sonjuName, setSonjuName] = useState('돌쇠');
+
+  useEffect(() => {
+    loadSonjuName();
+
+    // 화면이 포커스될 때마다 손주 이름 새로고침
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadSonjuName();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadSonjuName = async () => {
+    try {
+      // 로컬 스토리지에서 빠르게 로드
+      const localSonju = await AsyncStorage.getItem('sonjuName');
+      if (localSonju) setSonjuName(localSonju);
+
+      // API에서 최신 정보 가져오기
+      try {
+        const aiProfile = await getMyAIProfile();
+        if (aiProfile?.nickname) {
+          setSonjuName(aiProfile.nickname);
+          await AsyncStorage.setItem('sonjuName', aiProfile.nickname);
+        }
+      } catch (apiError) {
+        console.log('AI 프로필 로드 실패 (로컬 데이터 사용):', apiError);
+      }
+    } catch (error) {
+      console.error('손주 이름 로드 실패:', error);
+    }
+  };
+
   const quickMenus = [
     {
       id: 1,
       title: '건강',
-      image: require('../../../assets/images/건강아이콘.png'),
+      image: require('../../../assets/images/healthicon.png'),
       onPress: () => navigation.navigate('Health'),
     },
     {
       id: 2,
       title: '경제',
-      image: require('../../../assets/images/경제아이콘.png'),
+      image: require('../../../assets/images/economyicon.png'),
     },
     {
       id: 3,
       title: '활동',
-      image: require('../../../assets/images/배움아이콘.png'),
+      image: require('../../../assets/images/activityicon.png'),
     },
   ];
 
@@ -31,12 +67,12 @@ export default function HomePage({ navigation }: any) {
     <View style={styles.container}>
       {/* 배경 이미지 */}
       <Image
-        source={require('../../../assets/images/배경.png')}
+        source={require('../../../assets/images/background.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
       />
       <Image
-        source={require('../../../assets/images/배경2.png')}
+        source={require('../../../assets/images/background2.png')}
         style={styles.backgroundImage2}
         resizeMode="cover"
       />
@@ -64,7 +100,7 @@ export default function HomePage({ navigation }: any) {
         {/* 캐릭터 영역 */}
         <View style={styles.characterSection}>
           <ScaledText fontSize={28} style={styles.characterName}>
-            돌쇠
+            {sonjuName}
           </ScaledText>
 
           {/* 캐릭터 이미지 */}
@@ -81,7 +117,7 @@ export default function HomePage({ navigation }: any) {
               onPress={() => navigation.navigate('ChatMain')}
             >
               <Image
-                source={require('../../../assets/images/말풍선아이콘.png')}
+                source={require('../../../assets/images/bubble.png')}
                 style={styles.messageIcon}
                 resizeMode="contain"
               />
@@ -96,7 +132,7 @@ export default function HomePage({ navigation }: any) {
                   {totalPoints} 포인트
                 </ScaledText>
                 <Image
-                  source={require('../../../assets/images/코인.png')}
+                  source={require('../../../assets/images/coin.png')}
                   style={styles.Icons}
                 />
             </View>
@@ -123,7 +159,7 @@ export default function HomePage({ navigation }: any) {
           }}
         >
           <Image
-            source={require('../../../assets/images/설정아이콘.png')}
+            source={require('../../../assets/images/setting.png')}
             style={styles.buttonIcon}
             resizeMode="contain"
           />
@@ -138,7 +174,7 @@ export default function HomePage({ navigation }: any) {
           }}
         >
           <Image
-            source={require('../../../assets/images/알림아이콘.png')}
+            source={require('../../../assets/images/alarm.png')}
             style={styles.buttonIcon}
             resizeMode="contain"
           />

@@ -98,8 +98,8 @@ backgroundImage2: {
 
   messageButton: {
      position: 'absolute',
-     right: -45,
-     top: -60,
+     right: -50,
+     top: -25,
    },
 
    messageIcon: {

@@ -39,8 +39,8 @@ apiClient.interceptors.response.use(
     console.log('📥 API 응답 성공:', {
       url: response.config.url,
       status: response.status,
-      data: typeof response.data === 'string' 
-        ? response.data.substring(0, 100) 
+      data: typeof response.data === 'string'
+        ? response.data.substring(0, 100)
         : response.data,
     });
     return response;

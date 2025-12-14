@@ -133,7 +133,7 @@ export default function HealthDiaryEntry() {
           disabled={isLoading}
         >
           <Image
-            source={require('../../../assets/images/왼쪽화살표.png')}
+            source={require('../../../assets/images/leftarrow.png')}
             style={healthStyles.backIcon}
             resizeMode="contain"
           />

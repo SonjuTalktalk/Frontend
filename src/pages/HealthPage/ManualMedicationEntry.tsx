@@ -1,10 +1,12 @@
 // src/pages/HealthPage/ManualMedicationEntry.tsx
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Image, TextInput, Modal } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Image, TextInput, Modal, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
+import { DateTimePicker } from '../TodoPage/DateTimePicker';
 import { healthStyles } from '../../styles/Health';
+import { createMedicine, convertDateToAPIFormat, MedicineItem } from '../../api/medicineApi';
 
 const MEDICATION_STORAGE_KEY = '@medication_data';
 
@@ -21,6 +23,7 @@ export default function ManualMedicationEntry() {
   const [frequency, setFrequency] = useState('');
   const [days, setDays] = useState('');
   const [startDate, setStartDate] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const [showFrequencyPicker, setShowFrequencyPicker] = useState(false);
   const [showDaysPicker, setShowDaysPicker] = useState(false);
@@ -56,23 +59,6 @@ export default function ManualMedicationEntry() {
     setShowDaysPicker(false);
   };
 
-  const handleDateChange = (direction: 'prev' | 'next') => {
-    const currentDate = parseDate(startDate || formatDate(new Date()));
-    if (direction === 'prev') {
-      currentDate.setDate(currentDate.getDate() - 1);
-    } else {
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    setStartDate(formatDate(currentDate));
-  };
-
-  const handleDateConfirm = () => {
-    if (!startDate) {
-      setStartDate(formatDate(new Date()));
-    }
-    setShowDatePicker(false);
-  };
-
   const getTimeSlots = (freq: string): { time: string; label: string }[] => {
     const frequency = parseInt(freq);
     if (frequency === 1) return [{ time: '오전 8시', label: '아침' }];
@@ -94,12 +80,33 @@ export default function ManualMedicationEntry() {
   };
 
   const handleSave = async () => {
+    console.log('=== 복약 저장 시작 ===');
+
     if (!medicationName || !frequency || !days || !startDate) {
-      alert('모든 항목을 입력해주세요.');
+      Alert.alert('입력 오류', '모든 항목을 입력해주세요.');
       return;
     }
 
+    setIsLoading(true);
+
     try {
+      const apiDate = convertDateToAPIFormat(startDate);
+      const medicineItem: MedicineItem = {
+        medicine_name: medicationName,
+        medicine_daily: parseInt(frequency),
+        medicine_period: parseInt(days),
+        medicine_date: apiDate,
+      };
+
+      const response = await createMedicine([medicineItem]);
+
+      if (!response.response[0].registered) {
+        const errorMsg = response.response[0].response_message;
+        Alert.alert('등록 실패', errorMsg);
+        setIsLoading(false);
+        return;
+      }
+
       const stored = await AsyncStorage.getItem(MEDICATION_STORAGE_KEY);
       const existingData = stored ? JSON.parse(stored) : {};
 
@@ -129,7 +136,12 @@ export default function ManualMedicationEntry() {
           }
 
           const medId = `${dateKey}-${newSlot.time}-${medicationName}-${Date.now()}-${Math.random()}`;
-          const exists = targetSlot.medications.some(m => m.name === medicationName && m.startDate === startDate);
+          const exists = targetSlot.medications.some(m =>
+            m.name === medicationName &&
+            m.startDate === startDate &&
+            m.frequency === frequency &&
+            m.days === days
+          );
 
           if (!exists) {
             targetSlot.medications.push({
@@ -150,9 +162,25 @@ export default function ManualMedicationEntry() {
       }
 
       await AsyncStorage.setItem(MEDICATION_STORAGE_KEY, JSON.stringify(existingData));
-      navigation.goBack();
-    } catch (error) {
-      console.error('복약 데이터 저장 실패:', error);
+
+      Alert.alert('성공', '복약 알림이 등록되었습니다.', [
+        { text: '확인', onPress: () => navigation.goBack() }
+      ]);
+    } catch (error: any) {
+      console.error('❌ 복약 저장 실패:', error);
+
+      let errorMessage = '복약 등록에 실패했습니다.';
+      if (error.response?.data?.detail) {
+        errorMessage = Array.isArray(error.response.data.detail)
+          ? error.response.data.detail[0]?.msg || errorMessage
+          : error.response.data.detail;
+      } else if (error.response?.data?.response?.length > 0) {
+        errorMessage = error.response.data.response[0].response_message;
+      }
+
+      Alert.alert('오류', errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -161,7 +189,7 @@ export default function ManualMedicationEntry() {
       <View style={healthStyles.header}>
         <TouchableOpacity style={healthStyles.backButton} onPress={() => navigation.goBack()}>
           <Image
-            source={require('../../../assets/images/왼쪽화살표.png')}
+            source={require('../../../assets/images/leftarrow.png')}
             style={healthStyles.backIcon}
             resizeMode="contain"
           />
@@ -235,15 +263,19 @@ export default function ManualMedicationEntry() {
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={healthStyles.completeButton} onPress={handleSave}>
+          <TouchableOpacity
+            style={[healthStyles.completeButton, isLoading && { opacity: 0.5 }]}
+            onPress={handleSave}
+            disabled={isLoading}
+          >
             <ScaledText fontSize={20} style={healthStyles.completeButtonText}>
-              저장하기
+              {isLoading ? '등록 중...' : '저장하기'}
             </ScaledText>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* 투약 횟수 선택 모달 - 수정됨 */}
+      {/* 투약 횟수 선택 모달 */}
       <Modal visible={showFrequencyPicker} transparent animationType="fade" onRequestClose={() => setShowFrequencyPicker(false)}>
         <TouchableOpacity
           style={healthStyles.modalOverlay}
@@ -281,7 +313,7 @@ export default function ManualMedicationEntry() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 투약 일수 선택 모달 - 수정됨 */}
+      {/* 투약 일수 선택 모달 */}
       <Modal visible={showDaysPicker} transparent animationType="fade" onRequestClose={() => setShowDaysPicker(false)}>
         <TouchableOpacity
           style={healthStyles.modalOverlay}
@@ -319,65 +351,18 @@ export default function ManualMedicationEntry() {
         </TouchableOpacity>
       </Modal>
 
-      {/* 날짜 선택 모달 - 수정됨 */}
-      <Modal visible={showDatePicker} transparent animationType="fade" onRequestClose={() => setShowDatePicker(false)}>
-        <TouchableOpacity
-          style={healthStyles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowDatePicker(false)}
-        >
-          <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-            <View style={healthStyles.datePickerModalContent}>
-              <ScaledText fontSize={24} style={healthStyles.modalTitle}>
-                투약 시작일 선택
-              </ScaledText>
-              <View style={healthStyles.datePickerContainer}>
-                <TouchableOpacity
-                  style={healthStyles.dateArrowButton}
-                  onPress={() => handleDateChange('prev')}
-                >
-                  <Image
-                    source={require('../../../assets/images/왼쪽화살표꼬리X.png')}
-                    style={healthStyles.datePickerArrow}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-                <ScaledText fontSize={24} style={healthStyles.datePickerText}>
-                  {startDate || formatDate(new Date())}
-                </ScaledText>
-                <TouchableOpacity
-                  style={healthStyles.dateArrowButton}
-                  onPress={() => handleDateChange('next')}
-                >
-                  <Image
-                    source={require('../../../assets/images/오른쪽화살표꼬리X.png')}
-                    style={healthStyles.datePickerArrow}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={healthStyles.modalButtons}>
-                <TouchableOpacity
-                  style={healthStyles.modalCancelButton}
-                  onPress={() => setShowDatePicker(false)}
-                >
-                  <ScaledText fontSize={18} style={healthStyles.modalCancelText}>
-                    취소
-                  </ScaledText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={healthStyles.modalConfirmButton}
-                  onPress={handleDateConfirm}
-                >
-                  <ScaledText fontSize={18} style={healthStyles.modalConfirmText}>
-                    확인
-                  </ScaledText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+      {/* 날짜 선택 – Todo용 DateTimePicker 재사용 */}
+      <DateTimePicker
+        visible={showDatePicker}
+        mode="date"
+        value={parseDate(startDate || formatDate(new Date()))}
+        onClose={() => setShowDatePicker(false)}
+        onConfirm={(selectedDate) => {
+          // Date -> "YYYY/MM/DD" 문자열로 다시 변환해서 저장
+          setStartDate(formatDate(selectedDate));
+          setShowDatePicker(false);
+        }}
+      />
     </View>
   );
 }
