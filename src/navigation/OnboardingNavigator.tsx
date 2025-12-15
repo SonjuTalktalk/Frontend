@@ -11,6 +11,7 @@ import FontSizeSelector from '../pages/Onboarding/FontSizeSelector';
 import SetSonjuNameStep1 from '../pages/Onboarding/SetSonjuNameStep1';
 import SetSonjuNameStep2 from '../pages/Onboarding/SetSonjuNameStep2';
 import CharacterSetting from '../pages/Onboarding/CharacterSetting';
+import NotificationPermission from '../pages/Onboarding/NotificationPermission';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +28,7 @@ function OnboardingNavigator() {
       <Stack.Screen name="SetSonjuNameStep1" component={SetSonjuNameStep1} />
       <Stack.Screen name="SetSonjuNameStep2" component={SetSonjuNameStep2} />
       <Stack.Screen name="CharacterSetting" component={CharacterSetting} />
+      <Stack.Screen name="NotificationPermission" component={NotificationPermission} />
     </Stack.Navigator>
   );
 }

@@ -1,62 +1,35 @@
-// src/pages/HomePage/HomePage.tsx
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Image, TouchableOpacity, ScrollView } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+// src/pages/HomePage/HomePage.tsx (업데이트)
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
 import { styles } from '../../styles/Home';
 import { useMission } from '../../contexts/MissionContext';
 import { getMyAIProfile } from '../../api/profileApi';
-import { usePoints } from '../../contexts/PointContext';
-import { getCurrentBackgrounds } from '../../utils/backgroundConfig';
-
-type EquippedItemsMap = { [key: string]: string };
 
 export default function HomePage({ navigation }: any) {
-  const { points, refreshPoints } = usePoints();
+  const { totalPoints } = useMission();
+  const [sonjuName, setSonjuName] = useState('돌쇠');
 
-  const [sonjuName, setSonjuName] = useState('손주');
-  const [equippedItems, setEquippedItems] = useState<EquippedItemsMap>({});
-  const [backgrounds, setBackgrounds] = useState<{
-      bg1: any;
-      bg2: any | null;
-    }>({
-      bg1: require('../../../assets/images/background.png'),
-      bg2: require('../../../assets/images/background2.png'),
+  useEffect(() => {
+    loadSonjuName();
+
+    // 화면이 포커스될 때마다 손주 이름 새로고침
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadSonjuName();
     });
 
-  const loadEquippedItems = async () => {
-    try {
-      const raw = await AsyncStorage.getItem('equippedItems');
-      if (!raw) return;
-
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') {
-        setEquippedItems(parsed);
-      }
-    } catch (e) {
-      console.log('장착 아이템 로드 실패:', e);
-    }
-  };
-
-  const loadBackground = async () => {
-    try {
-      const equippedBg = await AsyncStorage.getItem('equippedBackground');
-      const bgs = getCurrentBackgrounds(equippedBg, 'main');
-      setBackgrounds(bgs);
-      console.log('✅ 홈 배경 로드:', equippedBg || '기본 배경');
-    } catch (error) {
-      console.error('배경 로드 실패:', error);
-    }
-  };
+    return unsubscribe;
+  }, [navigation]);
 
   const loadSonjuName = async () => {
     try {
-      // 1) 로컬에서 빠르게
+      // 로컬 스토리지에서 빠르게 로드
       const localSonju = await AsyncStorage.getItem('sonjuName');
       if (localSonju) setSonjuName(localSonju);
 
-      // 2) API에서 최신으로 갱신
+      // API에서 최신 정보 가져오기
       try {
         const aiProfile = await getMyAIProfile();
         if (aiProfile?.nickname) {
@@ -71,41 +44,6 @@ export default function HomePage({ navigation }: any) {
     }
   };
 
-  // 화면 포커스될 때마다 실행
-  useFocusEffect(
-    React.useCallback(() => {
-      loadSonjuName();
-      loadEquippedItems();
-      loadBackground();  // 배경 로드 추가
-      refreshPoints();
-    }, [])
-  );
-
-  const getCharacterImage = () => {
-    const equippedItemIds = Object.values(equippedItems);
-
-    if (equippedItemIds.includes('ribbon')) {
-      return require('../../../assets/images/RibbonSonju.png');
-    }
-    if (equippedItemIds.includes('hiking-hat')) {
-      return require('../../../assets/images/HikinghatSonju.png');
-    }
-    if (equippedItemIds.includes('bunny-band')) {
-      return require('../../../assets/images/RabbitSonju.png');
-    }
-    if (equippedItemIds.includes('wizard-hat')) {
-      return require('../../../assets/images/MagicSonju.png');
-    }
-    if (equippedItemIds.includes('crown')) {
-      return require('../../../assets/images/KingSonju.png');
-    }
-    if (equippedItemIds.includes('glasses')) {
-      return require('../../../assets/images/UniformSonju.png');
-    }
-
-    return require('../../../assets/images/sonjusmile.png');
-  };
-
   const quickMenus = [
     {
       id: 1,
@@ -117,43 +55,35 @@ export default function HomePage({ navigation }: any) {
       id: 2,
       title: '경제',
       image: require('../../../assets/images/economyicon.png'),
-      onPress: () => console.log('경제 눌림'),
     },
     {
       id: 3,
       title: '활동',
       image: require('../../../assets/images/activityicon.png'),
-      onPress: () => console.log('활동 눌림'),
     },
   ];
 
   return (
     <View style={styles.container}>
-      {/* 배경 이미지 - 동적으로 변경 */}
+      {/* 배경 이미지 */}
       <Image
-        source={backgrounds.bg1}
+        source={require('../../../assets/images/background.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
       />
-      {backgrounds.bg2 && (
-        <Image
-          source={backgrounds.bg2}
-          style={styles.backgroundImage2}
-          resizeMode="cover"
-        />
-      )}
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 퀵 메뉴 */}
         <View style={styles.quickMenuContainer}>
           {quickMenus.map((menu) => (
             <TouchableOpacity
               key={menu.id}
-              style={styles.quickMenu}
+              style={[styles.quickMenu]}
               onPress={menu.onPress}
-              activeOpacity={0.8}
             >
-              <Image source={menu.image} style={styles.menuIcon} resizeMode="contain" />
+              <Image
+                source={menu.image}
+                style={styles.menuIcon}
+                resizeMode="contain"
+              />
               <ScaledText fontSize={18} style={styles.menuTitle}>
                 {menu.title}
               </ScaledText>
@@ -167,18 +97,18 @@ export default function HomePage({ navigation }: any) {
             {sonjuName}
           </ScaledText>
 
+          {/* 캐릭터 이미지 */}
           <View style={styles.characterContainer}>
             <Image
-              source={getCharacterImage()}
+              source={require('../../../assets/images/sonjusmile.png')}
               style={styles.characterImage}
               resizeMode="contain"
             />
 
-            {/* 메시지 버튼 */}
+            {/* 메시지 아이콘 */}
             <TouchableOpacity
               style={styles.messageButton}
               onPress={() => navigation.navigate('ChatMain')}
-              activeOpacity={0.8}
             >
               <Image
                 source={require('../../../assets/images/bubble.png')}
@@ -192,35 +122,34 @@ export default function HomePage({ navigation }: any) {
           {/* 포인트 영역 */}
           <View style={styles.pointContainer}>
             <View style={styles.pointSection}>
-              <ScaledText fontSize={24} style={styles.pointText}>
-                {points} 포인트
-              </ScaledText>
-              <Image source={require('../../../assets/images/coin.png')} style={styles.Icons} />
+                <ScaledText fontSize={24} style={styles.pointText}>
+                  {totalPoints} 포인트
+                </ScaledText>
+                <Image
+                  source={require('../../../assets/images/coin.png')}
+                  style={styles.Icons}
+                />
             </View>
-
-            <TouchableOpacity
-              style={styles.pointSection}
-              onPress={() => navigation.navigate('Shop')}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity style={styles.pointSection}>
               <ScaledText fontSize={18} style={styles.pointButton}>
                 꾸미기
               </ScaledText>
               <Image
-                source={require('../../../assets/images/arrowright.png')}
+                source={require('../../../assets/images/오른쪽화살표.png')}
                 style={styles.Icons}
               />
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
 
-      {/* 좌측 버튼들 */}
       <View style={styles.leftButtonsContainer}>
+        {/* 설정 버튼 */}
         <TouchableOpacity
           style={styles.leftButton}
-          onPress={() => navigation.navigate('Settings')}
-          activeOpacity={0.8}
+          onPress={() => {
+            console.log('설정 버튼 클릭');
+            navigation.navigate('Settings');
+          }}
         >
           <Image
             source={require('../../../assets/images/setting.png')}
@@ -229,10 +158,13 @@ export default function HomePage({ navigation }: any) {
           />
         </TouchableOpacity>
 
+        {/* 알림 버튼 */}
         <TouchableOpacity
           style={styles.leftButton}
-          onPress={() => navigation.navigate('Notification')}
-          activeOpacity={0.8}
+          onPress={() => {
+            console.log('알림 버튼 클릭');
+            navigation.navigate('Notification');
+          }}
         >
           <Image
             source={require('../../../assets/images/alarm.png')}

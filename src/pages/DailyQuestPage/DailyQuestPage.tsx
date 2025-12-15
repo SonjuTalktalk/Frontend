@@ -25,7 +25,6 @@ type DailyQuestNavigationProp = NativeStackNavigationProp<any>;
 
 const DailyQuestPage = () => {
   const navigation = useNavigation<DailyQuestNavigationProp>();
-  const { points } = usePoints(); // ShopPage와 동일한 방식
   const {
     challenges,
     loading,
@@ -34,10 +33,9 @@ const DailyQuestPage = () => {
   } = useMission();
 
   const [refreshing, setRefreshing] = React.useState(false);
-  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   /**
-   * Pull-to-refresh 핸들러 (단순 새로고침)
+   * Pull-to-refresh 핸들러
    */
   const handlePullRefresh = async () => {
     setRefreshing(true);
@@ -48,52 +46,6 @@ const DailyQuestPage = () => {
     } finally {
       setRefreshing(false);
     }
-  };
-
-  /**
-   * 새로운 미션으로 교체 (기존 미션 삭제 후 새 미션 생성)
-   */
-  const handleRefreshChallenges = async () => {
-    Alert.alert(
-      '미션 새로고침',
-      '현재 미션을 모두 삭제하고 새로운 미션 4개를 받으시겠습니까?\n(완료된 미션도 삭제됩니다)',
-      [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
-        {
-          text: '새로고침',
-          onPress: async () => {
-            setIsRefreshing(true);
-            try {
-              const response = await missionService.refreshDailyChallenges();
-              console.log('✅ 미션 새로고침 성공:', response);
-
-              Alert.alert(
-                '새로고침 완료',
-                `새로운 미션 ${response.challenges.length}개가 생성되었습니다!\n남은 새로고침 횟수: ${response.refresh_remaining}회`,
-                [{
-                  text: '확인',
-                  onPress: async () => {
-                    await loadChallenges();
-                  }
-                }]
-              );
-            } catch (err: any) {
-              console.error('❌ 미션 새로고침 실패:', err);
-              Alert.alert(
-                '오류',
-                err.message || '미션 새로고침에 실패했습니다.',
-                [{ text: '확인' }]
-              );
-            } finally {
-              setIsRefreshing(false);
-            }
-          },
-        },
-      ]
-    );
   };
 
   /**
@@ -144,13 +96,13 @@ const DailyQuestPage = () => {
           rightButton={
             <TouchableOpacity
               style={styles.refreshButton}
-              onPress={handleRefreshChallenges}
-              disabled={isRefreshing}
+              onPress={handlePullRefresh}
+              disabled={refreshing}
             >
               <Icon
                 name="refresh-outline"
                 size={24}
-                color={isRefreshing ? colors.border : colors.text}
+                color={refreshing ? colors.border : colors.text}
               />
             </TouchableOpacity>
           }
@@ -176,18 +128,16 @@ const DailyQuestPage = () => {
           {/* 챌린지 통계 */}
           <View style={MissionStyles.statsContainer}>
             <View style={MissionStyles.statItem}>
-              <ScaledText fontSize={16} style={MissionStyles.statLabel}>오늘 완료한 미션</ScaledText>
+              <ScaledText fontSize={16} style={MissionStyles.statLabel}>오늘의 챌린지</ScaledText>
               <ScaledText fontSize={24} style={MissionStyles.statValue}>
-                {Array.isArray(challenges)
-                  ? `${challenges.filter(c => c.is_complete).length}개`
-                  : '0개'}
+                {Array.isArray(challenges) ? challenges.length : 0}개
               </ScaledText>
             </View>
             <View style={MissionStyles.statDivider} />
             <View style={MissionStyles.statItem}>
-              <ScaledText fontSize={16} style={MissionStyles.statLabel}>보유 포인트</ScaledText>
+              <ScaledText fontSize={16} style={MissionStyles.statLabel}>총 포인트</ScaledText>
               <ScaledText fontSize={24} style={MissionStyles.statValue}>
-                {points || 0}P
+                {Array.isArray(challenges) ? challenges.reduce((sum, c) => sum + c.give_point, 0) : 0}P
               </ScaledText>
             </View>
           </View>
@@ -208,6 +158,7 @@ const DailyQuestPage = () => {
               {challenges
                 .sort((a, b) => {
                   // 완료되지 않은 미션을 위로 정렬
+                  // is_complete가 없으면 미완료로 간주
                   const aCompleted = a.is_complete || false;
                   const bCompleted = b.is_complete || false;
 
@@ -231,7 +182,7 @@ const DailyQuestPage = () => {
 };
 
 /**
- * 챌린지 카드 컴포넌트 (서버 데이터 기반 완료 상태)
+ * 챌린지 카드 컴포넌트 (완료 상태 표시 추가)
  */
 const ChallengeCard = ({
   challenge,
@@ -241,17 +192,12 @@ const ChallengeCard = ({
   onRefresh: () => Promise<void>;
 }) => {
   const [loading, setLoading] = React.useState(false);
+  const [isCompleted, setIsCompleted] = React.useState(false);
   const { refreshPoints } = usePoints();
 
-  // 서버에서 받은 is_complete 상태 사용
-  const isCompleted = challenge.is_complete || false;
-
-  /** ✅ 미션 완료 처리 */
+  /** ✅ 미션 완료 처리 (새 API 사용) */
   const handleComplete = async () => {
-    if (isCompleted) {
-      Alert.alert('알림', '이미 완료한 미션입니다.');
-      return;
-    }
+    if (isCompleted) return; // 이미 완료된 경우 무시
 
     try {
       setLoading(true);
@@ -263,30 +209,26 @@ const ChallengeCard = ({
 
       // 포인트 획득 여부 확인
       if (response.earned_point > 0) {
+        setIsCompleted(true); // 완료 상태로 변경
+
         Alert.alert(
           '미션 완료! 🎉',
           `${response.earned_point}P를 획득했습니다!\n총 포인트: ${response.total_point}P`,
-          [{
-            text: '확인',
-            onPress: async () => {
-              // 포인트 컨텍스트 새로고침
-              await refreshPoints();
-              // 챌린지 목록 새로고침 (서버에서 최신 상태 받아오기)
-              await onRefresh();
-            }
-          }]
+          [{ text: '확인' }]
         );
+
+        // 포인트 컨텍스트 새로고침
+        await refreshPoints();
+
+        // 챌린지 목록 새로고침
+        await onRefresh();
       } else {
-        // 이미 완료된 미션 (idempotent)
+        // 이미 완료된 미션
+        setIsCompleted(true);
         Alert.alert(
           '알림',
           '이미 완료한 미션입니다.',
-          [{
-            text: '확인',
-            onPress: async () => {
-              await onRefresh();
-            }
-          }]
+          [{ text: '확인' }]
         );
       }
 
