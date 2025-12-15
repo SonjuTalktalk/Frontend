@@ -594,11 +594,11 @@ export default function MedicationSettings() {
           <View style={healthStyles.dateCard}>
             <View style={healthStyles.dateSelector}>
               <TouchableOpacity style={healthStyles.dateArrow} onPress={handlePrevDay}>
-                <Image source={require('../../../assets/images/arrowleftnotail.png')} style={healthStyles.arrowIcon} resizeMode="contain" />
+                <Image source={require('../../../assets/images/왼쪽화살표꼬리X.png')} style={healthStyles.arrowIcon} resizeMode="contain" />
               </TouchableOpacity>
               <ScaledText fontSize={24} style={healthStyles.dateText}>{getDateLabel(currentDate)}</ScaledText>
               <TouchableOpacity style={healthStyles.dateArrow} onPress={handleNextDay}>
-                <Image source={require('../../../assets/images/arrowrightnotail.png')} style={healthStyles.arrowIcon} resizeMode="contain" />
+                <Image source={require('../../../assets/images/오른쪽화살표꼬리X.png')} style={healthStyles.arrowIcon} resizeMode="contain" />
               </TouchableOpacity>
             </View>
           </View>
@@ -620,7 +620,7 @@ export default function MedicationSettings() {
                         <ScaledText fontSize={18} style={healthStyles.medicationName}>{med.name}</ScaledText>
                       </TouchableOpacity>
                       <TouchableOpacity style={healthStyles.checkboxContainer} onPress={() => toggleMedication(slotIndex, med.id)}>
-                        <Image source={med.checked ? require('../../../assets/images/aftercheckicon.png') : require('../../../assets/images/checkicon.png')} style={healthStyles.checkIcon} resizeMode="contain" />
+                        <Image source={med.checked ? require('../../../assets/images/체크후아이콘.png') : require('../../../assets/images/체크아이콘.png')} style={healthStyles.checkIcon} resizeMode="contain" />
                       </TouchableOpacity>
                     </View>
                   ))}

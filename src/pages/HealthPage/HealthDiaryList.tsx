@@ -113,7 +113,7 @@ export default function HealthDiaryList() {
                 disabled={!canGoLeft}
               >
                 <Image
-                  source={require('../../../assets/images/arrowleftnotail.png')}
+                  source={require('../../../assets/images/왼쪽화살표꼬리X.png')}
                   style={[
                     healthStyles.arrowIcon,
                     !canGoLeft && { tintColor: '#D0D0D0' }
@@ -130,7 +130,7 @@ export default function HealthDiaryList() {
                 disabled={!canGoRight}
               >
                 <Image
-                  source={require('../../../assets/images/arrowrightnotail.png')}
+                  source={require('../../../assets/images/오른쪽화살표꼬리X.png')}
                   style={[
                     healthStyles.arrowIcon,
                     !canGoRight && { tintColor: '#D0D0D0' }

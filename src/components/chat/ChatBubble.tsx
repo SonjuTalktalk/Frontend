@@ -3,12 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import SoundPlayer from 'react-native-sound-player';
 import ScaledText from '../ScaledText';
-import { Message } from '../../contexts/ChatContext';
-import { ttsService } from '../../services/ttsService';
+import { ChatMessage } from '@/contexts/ChatContext';
 
 interface ChatBubbleProps {
-  message: Message;
-  chatListNum?: number;
+  message: ChatMessage;
 }
 
 /**
@@ -87,7 +85,6 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
             {message.content}
           </ScaledText>
         </View>
-
         <ScaledText fontSize={12} style={styles.userTimestamp}>
           {message.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
         </ScaledText>
@@ -95,36 +92,14 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
     );
   }
 
-  // AI 메시지
   return (
     <View style={styles.assistantContainer}>
+      <View style={styles.avatarPlaceholder} />
       <View style={styles.assistantBubble}>
-        {/* ✅ 버블 내부 좌상단 아이콘 버튼 */}
-        <TouchableOpacity
-          style={styles.avatarButton}
-          onPress={handleTTSPlay}
-          disabled={isPlayingTTS}
-          activeOpacity={0.7}
-        >
-          <View style={styles.avatar}>
-            {isPlayingTTS ? (
-              <ActivityIndicator size="small" color="#02BFDC" />
-            ) : (
-              <Image
-                source={require('../../../assets/images/ElipseSonjuButton.png')}
-                style={styles.avatarImage}
-                resizeMode="cover"
-              />
-            )}
-          </View>
-        </TouchableOpacity>
-
-        {/* ✅ 텍스트는 아이콘 영역만큼 오른쪽에서 시작 */}
         <ScaledText style={styles.assistantText} fontSize={20}>
           {message.content}
         </ScaledText>
       </View>
-
       <ScaledText fontSize={12} style={styles.assistantTimestamp}>
         {message.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
       </ScaledText>
@@ -160,34 +135,26 @@ const styles = StyleSheet.create({
     color: '#7A9CA5',
     marginTop: 4,
   },
-
   assistantContainer: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 16,
     paddingHorizontal: 16,
   },
-
-  /**
-   * ✅ 핵심: 버블 내부에 아이콘을 absolute로 박아두고
-   * 텍스트는 paddingLeft로 아이콘 영역만큼 오른쪽에서 시작하게 함
-   */
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#A5BCC3',
+    marginRight: 12,
+  },
   assistantBubble: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderBottomLeftRadius: 4,
-
-    paddingTop: 12,
-    paddingRight: 20,
-    paddingBottom: 12,
-
-    // 아이콘 자리 확보
-    paddingLeft: 20 + AVATAR_SIZE + AVATAR_GAP,
-
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     maxWidth: '75%',
-    position: 'relative',
-    flexShrink: 1,
-
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -223,11 +190,10 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     color: '#2D4550',
   },
-
   assistantTimestamp: {
     color: '#7A9CA5',
     marginTop: 4,
-    marginLeft: 12,
+    marginLeft: 60,
   },
 });
 

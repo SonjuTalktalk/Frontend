@@ -1,10 +1,10 @@
 // src/screens/chat/PromptSettings.tsx
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
+import { 
+  View,  
+  TouchableOpacity, 
+  StyleSheet, 
   ScrollView,
   Alert,
   ActivityIndicator,
@@ -12,14 +12,14 @@ import {
 } from 'react-native';
 import ScaledText from '../../components/ScaledText';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import PageHeader from '../../components/common/PageHeader';
 import { useChat } from '../../contexts/ChatContext';
 import { Personality } from '../../types/ai';
 import { promptConfigs } from '../../utils/promptHelper';
 import { ChatStackParamList } from '../../types/navigation';
-import { aiProfileAPI } from '../../services/AiProfile';
+import { aiProfileAPI } from '../../services/aiProfile';
 
 type PromptSettingsNavigationProp = NativeStackNavigationProp<ChatStackParamList, 'PromptSettings'>;
 
@@ -27,60 +27,35 @@ const PromptSettings = () => {
   const navigation = useNavigation<PromptSettingsNavigationProp>();
   const { currentPrompt, setCurrentPrompt } = useChat();
 
-  const [selectedPrompt, setSelectedPrompt] = useState<Personality>(Personality.FRIENDLY);
+  const [selectedPrompt, setSelectedPrompt] = useState<Personality>(currentPrompt);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [aiNickname, setAiNickname] = useState<string>('손주');
 
-  /**
-   * AI 프로필 로드
-   */
-  const fetchAiProfile = async () => {
-    try {
-      setInitialLoading(true);
-      const profile = await aiProfileAPI.getAiProfile();
+  useEffect(() => {
+    const fetchAiProfile = async () => {
+      try {
+        const profile = await aiProfileAPI.getAiProfile();
+        setAiNickname(profile.nickname);
+        setSelectedPrompt(profile.personality);
+        setCurrentPrompt(profile.personality);
+      } catch (error) {
+        console.error('AI 프로필 로드 실패:', error);
+      }
+    };
 
-      console.log('✅ 로드된 AI 프로필:', profile);
-
-      setAiNickname(profile.nickname);
-      setSelectedPrompt(profile.personality as Personality);
-      setCurrentPrompt(profile.personality as Personality);
-    } catch (error) {
-      console.error('❌ AI 프로필 로드 실패:', error);
-      Alert.alert('오류', 'AI 프로필을 불러오는데 실패했습니다.');
-    } finally {
-      setInitialLoading(false);
-    }
-  };
-
-  // 화면 포커스될 때마다 AI 프로필 로드
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchAiProfile();
-    }, [])
-  );
+    fetchAiProfile();
+  }, []);
 
   const handleSelectPrompt = (promptType: Personality) => {
     setSelectedPrompt(promptType);
   };
 
   const handleSave = async () => {
-    // 변경사항이 없으면 그냥 돌아가기
-    if (selectedPrompt === currentPrompt) {
-      navigation.goBack();
-      return;
-    }
-
     try {
       setLoading(true);
 
-      // PUT /ai/preferences 호출
-      const updatedProfile = await aiProfileAPI.updatePreferences(selectedPrompt);
-
-      console.log('✅ 성격 변경 완료:', updatedProfile);
-
-      // ChatContext 업데이트
-      setCurrentPrompt(updatedProfile.personality);
+      await aiProfileAPI.updatePreferences(selectedPrompt);
+      setCurrentPrompt(selectedPrompt);
 
       Alert.alert('저장 완료', `${aiNickname}의 성격이 변경되었습니다.`, [
         {
@@ -89,7 +64,7 @@ const PromptSettings = () => {
         },
       ]);
     } catch (error: any) {
-      console.error('❌ 프롬프트 저장 실패:', error);
+      console.error('프롬프트 저장 실패:', error);
       Alert.alert('오류', error.message || '성격 변경에 실패했습니다.');
     } finally {
       setLoading(false);
@@ -102,20 +77,6 @@ const PromptSettings = () => {
     Personality.PLEASANT,
     Personality.RELIABLE,
   ];
-
-  // 초기 로딩 중
-  if (initialLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={[styles.container, styles.loadingContainer]}>
-          <ActivityIndicator size="large" color="#02BFDC" />
-          <ScaledText fontSize={16} style={styles.loadingText}>
-            프로필을 불러오는 중...
-          </ScaledText>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -206,14 +167,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#B8E9F5',
   },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    color: '#2D4550',
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -253,13 +206,9 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: '#A2E4F2',
+    backgroundColor: '#9fd8e9ff',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  character: {
-    width: '100%',
-    height: '100%',
   },
   characterName: {
     marginTop: 16,

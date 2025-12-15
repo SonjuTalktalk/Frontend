@@ -9,7 +9,7 @@ export default function WelcomeScreen({ navigation }: any) {
       <ScaledText fontSize={28} style={s.title}>할머니, 할아버지{'\n'}안녕하세요!</ScaledText>
 
       <Image
-        source={require('../../../assets/images/SonjuBody1.png')}
+        source={require('../../../assets/images/손주전신1.png')}
         style={s.welcomeImage}
         resizeMode="contain"
       />

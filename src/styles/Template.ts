@@ -8,6 +8,31 @@ export const onboardingStyles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 20,
   },
+  container: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+      paddingHorizontal: 20,
+    },
+
+    secondaryButton: {
+      width: '100%',
+      height: 50,
+      backgroundColor: '#fff',
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#02BFDC',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 10,
+    },
+
+    secondaryButtonText: {
+      color: '#02BFDC',
+      fontSize: 16,
+      fontFamily: 'Pretendard-Medium',
+    },
   
   container2: {
     flexDirection: 'row',
@@ -53,6 +78,7 @@ export const onboardingStyles = StyleSheet.create({
     fontSize: 24,
     color: '#777',
     marginTop: 10,
+    marginBottom: 10
   },
 
   maintext: {
@@ -203,4 +229,5 @@ scrollContainer: {
   height: 250,
   marginVertical: 40,
 },
+
 });
