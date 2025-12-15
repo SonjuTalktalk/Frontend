@@ -23,6 +23,7 @@ import ItemShopPage from '../pages/ItemShopPage/ItemShopPage';
 // Home Pages
 import SettingsPage from '../pages/HomePage/SettingsPage';
 import NotificationPage from '../pages/HomePage/NotificationPage';
+import PremiumBenefitsPage from '../pages/HomePage/PremiumBenefitsPage';
 import HealthPage from '../pages/HealthPage/HealthPage';
 import MedicationSettings from '../pages/HealthPage/MedicationSettings';
 import HealthDiaryEntry from '../pages/HealthPage/HealthDiaryEntry';
@@ -119,6 +120,11 @@ export default function RootNavigator() {
             component={SettingsPage}
             options={{ animation: 'slide_from_right' }}
           />
+          <Stack.Screen
+                      name="PremiumBenefits"
+                      component={PremiumBenefitsPage}
+                      options={{ animation: 'slide_from_right' }}
+                    />
           <Stack.Screen
             name="Notification"
             component={NotificationPage}

@@ -17,7 +17,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
-    <!-- queries는 application 밖에 위치 -->
+    <!-- ✅ queries는 application 밖에 위치 (하나로 합침) -->
     <queries>
         <intent>
             <action android:name="android.intent.action.GET_CONTENT" />
@@ -36,6 +36,19 @@
 
         <!-- Google Photos 지원 추가 -->
         <package android:name="com.google.android.apps.photos" />
+
+        <!-- ✅ 카카오페이 앱 (여기에 추가) -->
+        <package android:name="com.kakao.talk" />
+
+        <!-- ✅ 웹 브라우저 (여기에 추가) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
     </queries>
 
     <application

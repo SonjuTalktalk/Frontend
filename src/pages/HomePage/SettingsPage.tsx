@@ -420,9 +420,9 @@ export default function SettingsPage() {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() =>
-              Alert.alert('알림', '프리미엄 혜택 안내 기능은 준비 중입니다')
-            }
+            onPress={() => {
+              (navigation as any).navigate('PremiumBenefits');
+            }}
             disabled={isLoading}
           >
             <ScaledText fontSize={16} style={styles.menuLabel}>
