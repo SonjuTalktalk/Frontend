@@ -1,11 +1,10 @@
 // src/pages/HomePage/HomePage.tsx
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Image, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Image, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
 import { styles } from '../../styles/Home';
-import { useMission } from '../../contexts/MissionContext';
 import { getMyAIProfile } from '../../api/profileApi';
 import { usePoints } from '../../contexts/PointContext';
 import { getCurrentBackgrounds } from '../../utils/backgroundConfig';
@@ -52,11 +51,9 @@ export default function HomePage({ navigation }: any) {
 
   const loadSonjuName = async () => {
     try {
-      // 1) 로컬에서 빠르게
       const localSonju = await AsyncStorage.getItem('sonjuName');
       if (localSonju) setSonjuName(localSonju);
 
-      // 2) API에서 최신으로 갱신
       try {
         const aiProfile = await getMyAIProfile();
         if (aiProfile?.nickname) {
@@ -71,12 +68,11 @@ export default function HomePage({ navigation }: any) {
     }
   };
 
-  // 화면 포커스될 때마다 실행
   useFocusEffect(
     React.useCallback(() => {
       loadSonjuName();
       loadEquippedItems();
-      loadBackground();  // 배경 로드 추가
+      loadBackground();
       refreshPoints();
     }, [])
   );
@@ -129,7 +125,7 @@ export default function HomePage({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* 배경 이미지 - 동적으로 변경 */}
+      {/* 배경 이미지 */}
       <Image
         source={backgrounds.bg1}
         style={styles.backgroundImage}
@@ -138,82 +134,80 @@ export default function HomePage({ navigation }: any) {
       {backgrounds.bg2 && (
         <Image
           source={backgrounds.bg2}
-          style={styles.backgroundImage2}
+          style={styles.backgroundImage}
           resizeMode="cover"
         />
       )}
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* 퀵 메뉴 */}
-        <View style={styles.quickMenuContainer}>
-          {quickMenus.map((menu) => (
-            <TouchableOpacity
-              key={menu.id}
-              style={styles.quickMenu}
-              onPress={menu.onPress}
-              activeOpacity={0.8}
-            >
-              <Image source={menu.image} style={styles.menuIcon} resizeMode="contain" />
-              <ScaledText fontSize={18} style={styles.menuTitle}>
-                {menu.title}
-              </ScaledText>
-            </TouchableOpacity>
-          ))}
-        </View>
+      {/* 퀵 메뉴 - 상단 고정 */}
+      <View style={styles.quickMenuContainer}>
+        {quickMenus.map((menu) => (
+          <TouchableOpacity
+            key={menu.id}
+            style={styles.quickMenu}
+            onPress={menu.onPress}
+            activeOpacity={0.8}
+          >
+            <Image source={menu.image} style={styles.menuIcon} resizeMode="contain" />
+            <ScaledText fontSize={18} style={styles.menuTitle}>
+              {menu.title}
+            </ScaledText>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-        {/* 캐릭터 영역 */}
-        <View style={styles.characterSection}>
-          <ScaledText fontSize={28} style={styles.characterName}>
-            {sonjuName}
-          </ScaledText>
+      {/* 캐릭터 영역 - 중앙 */}
+      <View style={styles.characterSection}>
+        <ScaledText fontSize={28} style={styles.characterName}>
+          {sonjuName}
+        </ScaledText>
 
-          <View style={styles.characterContainer}>
+        <View style={styles.characterContainer}>
+          <Image
+            source={getCharacterImage()}
+            style={styles.characterImage}
+            resizeMode="contain"
+          />
+
+          {/* 메시지 버튼 */}
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={() => navigation.navigate('ChatMain')}
+            activeOpacity={0.8}
+          >
             <Image
-              source={getCharacterImage()}
-              style={styles.characterImage}
+              source={require('../../../assets/images/bubble.png')}
+              style={styles.messageIcon}
               resizeMode="contain"
             />
-
-            {/* 메시지 버튼 */}
-            <TouchableOpacity
-              style={styles.messageButton}
-              onPress={() => navigation.navigate('ChatMain')}
-              activeOpacity={0.8}
-            >
-              <Image
-                source={require('../../../assets/images/bubble.png')}
-                style={styles.messageIcon}
-                resizeMode="contain"
-              />
-              <View style={styles.badge} />
-            </TouchableOpacity>
-          </View>
-
-          {/* 포인트 영역 */}
-          <View style={styles.pointContainer}>
-            <View style={styles.pointSection}>
-              <ScaledText fontSize={24} style={styles.pointText}>
-                {points} 포인트
-              </ScaledText>
-              <Image source={require('../../../assets/images/coin.png')} style={styles.Icons} />
-            </View>
-
-            <TouchableOpacity
-              style={styles.pointSection}
-              onPress={() => navigation.navigate('Shop')}
-              activeOpacity={0.8}
-            >
-              <ScaledText fontSize={18} style={styles.pointButton}>
-                꾸미기
-              </ScaledText>
-              <Image
-                source={require('../../../assets/images/arrowright.png')}
-                style={styles.Icons}
-              />
-            </TouchableOpacity>
-          </View>
+            <View style={styles.badge} />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
+
+      {/* 포인트 영역 - 하단 고정 */}
+      <View style={styles.pointContainer}>
+        <View style={styles.pointSection}>
+          <ScaledText fontSize={24} style={styles.pointText}>
+            {points} 포인트
+          </ScaledText>
+          <Image source={require('../../../assets/images/coin.png')} style={styles.Icons} />
+        </View>
+
+        <TouchableOpacity
+          style={styles.pointSection}
+          onPress={() => navigation.navigate('Shop')}
+          activeOpacity={0.8}
+        >
+          <ScaledText fontSize={18} style={styles.pointButton}>
+            꾸미기
+          </ScaledText>
+          <Image
+            source={require('../../../assets/images/arrowright.png')}
+            style={styles.Icons}
+          />
+        </TouchableOpacity>
+      </View>
 
       {/* 좌측 버튼들 */}
       <View style={styles.leftButtonsContainer}>
