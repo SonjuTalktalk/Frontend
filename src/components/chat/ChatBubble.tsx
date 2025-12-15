@@ -1,6 +1,6 @@
-// src/components/chat/ChatBubble.tsx
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+// ✅ 변경: TrackPlayer 제거 -> SoundPlayer 추가
 import SoundPlayer from 'react-native-sound-player';
 import ScaledText from '../ScaledText';
 import { Message } from '../../contexts/ChatContext';
@@ -11,21 +11,48 @@ interface ChatBubbleProps {
   chatListNum?: number;
 }
 
-/**
- * ✅ 조절 포인트
- * - AVATAR_SIZE: 버튼(동그라미) 크기
- * - AVATAR_GAP: 버튼과 텍스트 사이 간격
- */
 const AVATAR_SIZE = 55;
 const AVATAR_GAP = 10;
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
   const isUser = message.role === 'user';
-
   const [isPlayingTTS, setIsPlayingTTS] = useState(false);
 
   /**
-   * TTS 재생 핸들러
+   * ✅ SoundPlayer 이벤트 리스너 설정 (재생 완료 감지용)
+   */
+  useEffect(() => {
+    // 재생이 끝났을 때 실행됨
+    const onFinishedPlayingSubscription = SoundPlayer.addEventListener(
+      'FinishedPlaying',
+      ({ success }) => {
+        console.log('✅ TTS 재생 완료 (success):', success);
+        setIsPlayingTTS(false); // 로딩/재생 상태 해제
+      }
+    );
+
+    // 오디오 로딩 중 에러가 났을 때 실행됨 (선택 사항)
+    const onFinishedLoadingURLSubscription = SoundPlayer.addEventListener(
+      'FinishedLoadingURL',
+      ({ success, url }) => {
+        if (!success) {
+          console.log('❌ URL 로딩 실패:', url);
+          setIsPlayingTTS(false);
+        }
+      }
+    );
+
+    // 컴포넌트 언마운트 시 정리 (이벤트 리스너 해제)
+    return () => {
+      onFinishedPlayingSubscription.remove();
+      onFinishedLoadingURLSubscription.remove();
+      // 화면을 벗어나거나 버블이 사라지면 소리 끄기 (선택 사항)
+      // SoundPlayer.stop();
+    };
+  }, []);
+
+  /**
+   * ✅ TTS 재생 핸들러 (SoundPlayer 사용)
    */
   const handleTTSPlay = async () => {
     if (!message.chat_num || !chatListNum) {
@@ -34,15 +61,22 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
     }
 
     try {
+      // 이미 재생 중이면 멈추기 (토글 기능)
+      if (isPlayingTTS) {
+        SoundPlayer.stop();
+        setIsPlayingTTS(false);
+        return;
+      }
+
       setIsPlayingTTS(true);
 
-      // TTS API 호출
+      // 1. TTS API 호출하여 URL 가져오기
       const response = await ttsService.getTTS(chatListNum, message.chat_num);
       const ttsUrl = ttsService.getFullTTSUrl(response.tts_path);
 
       console.log('🔊 TTS 재생 시작:', ttsUrl);
 
-      // URL에서 직접 재생
+      // 2. SoundPlayer로 URL 재생 (매우 간단!)
       SoundPlayer.playUrl(ttsUrl);
 
     } catch (error: any) {
@@ -52,33 +86,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
     }
   };
 
-  // 재생 완료 이벤트 리스너
-  useEffect(() => {
-    const finishedSubscription = SoundPlayer.addEventListener('FinishedPlaying', ({ success }) => {
-      console.log('✅ TTS 재생 완료:', success);
-      setIsPlayingTTS(false);
-    });
-
-    const errorSubscription = SoundPlayer.addEventListener('FinishedPlayingError', (error) => {
-      console.error('❌ TTS 재생 에러:', error);
-      setIsPlayingTTS(false);
-    });
-
-    // 컴포넌트 언마운트 시 정리
-    return () => {
-      finishedSubscription.remove();
-      errorSubscription.remove();
-
-      // 재생 중이던 사운드 정지
-      try {
-        SoundPlayer.stop();
-      } catch (e) {
-        // 정지 중 에러 무시
-      }
-    };
-  }, []);
-
-  // USER 메시지
+  // USER 메시지 (변경 없음)
   if (isUser) {
     return (
       <View style={styles.userContainer}>
@@ -95,19 +103,19 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
     );
   }
 
-  // AI 메시지
+  // AI 메시지 (변경 없음)
   return (
     <View style={styles.assistantContainer}>
       <View style={styles.assistantBubble}>
-        {/* ✅ 버블 내부 좌상단 아이콘 버튼 */}
         <TouchableOpacity
           style={styles.avatarButton}
           onPress={handleTTSPlay}
-          disabled={isPlayingTTS}
+          // disabled={isPlayingTTS}  <-- 재생 중일 때 누르면 멈추게 하려면 disabled 제거
           activeOpacity={0.7}
         >
           <View style={styles.avatar}>
             {isPlayingTTS ? (
+              // 재생 중(또는 로딩 중)일 때 인디케이터 표시
               <ActivityIndicator size="small" color="#02BFDC" />
             ) : (
               <Image
@@ -119,7 +127,6 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
           </View>
         </TouchableOpacity>
 
-        {/* ✅ 텍스트는 아이콘 영역만큼 오른쪽에서 시작 */}
         <ScaledText style={styles.assistantText} fontSize={20}>
           {message.content}
         </ScaledText>
@@ -168,26 +175,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
-  /**
-   * ✅ 핵심: 버블 내부에 아이콘을 absolute로 박아두고
-   * 텍스트는 paddingLeft로 아이콘 영역만큼 오른쪽에서 시작하게 함
-   */
   assistantBubble: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderBottomLeftRadius: 4,
-
     paddingTop: 12,
     paddingRight: 20,
     paddingBottom: 12,
-
-    // 아이콘 자리 확보
     paddingLeft: 20 + AVATAR_SIZE + AVATAR_GAP,
-
     maxWidth: '75%',
     position: 'relative',
     flexShrink: 1,
-
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -202,7 +200,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
 
-  // ✅ 버튼(동그라미) 자체
   avatar: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
@@ -212,6 +209,8 @@ const styles = StyleSheet.create({
     borderColor: '#D9D9D9',
     overflow: 'hidden',
     position: 'relative',
+    justifyContent: 'center', // 인디케이터 중앙 정렬
+    alignItems: 'center',     // 인디케이터 중앙 정렬
   },
 
   avatarImage: {
