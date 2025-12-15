@@ -380,7 +380,7 @@ export const shopAPI = {
       throw error;
     }
   },
-
+  // 구매아이템 목록 조회
   /**
    * 구매한 아이템 목록 조회
    * GET /item/bought
