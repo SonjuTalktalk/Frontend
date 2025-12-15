@@ -20,7 +20,7 @@ export const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   backButton: { padding: 4 },
-  headerTitle: { fontWeight: '600', color: '#000', paddingLeft: 140, paddingRight: 90 },
+  headerTitle: { fontWeight: '600', color: '#000', paddingLeft: 120, paddingRight: 70 },
   logoutButton: { color: '#02BFDC' },
   content: { flex: 1, paddingHorizontal: 30 },
   profileImageContainer: { alignItems: 'center', marginBottom: 30, marginTop: 20 },

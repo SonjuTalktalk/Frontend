@@ -91,7 +91,7 @@ export default function ShopPage({ navigation }: any) {
     bg2: any | null;
   }>({
     bg1: require('../../../assets/images/background.png'),
-    bg2: require('../../../assets/images/background2.png'),
+    bg2: require('../../../assets/images/background.png'),
   });
 
   useEffect(() => {

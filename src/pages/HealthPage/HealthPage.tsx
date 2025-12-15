@@ -314,7 +314,7 @@ export default function HealthPage() {
   return (
     <View style={healthStyles.container}>
       <Image
-        source={require('../../../assets/images/healthbackground.jpg')}
+        source={require('../../../assets/images/healthbackground.png')}
         style={healthStyles.backgroundImage}
         resizeMode="cover"
       />

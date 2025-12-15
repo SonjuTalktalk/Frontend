@@ -15,7 +15,7 @@ interface FontSizeProviderProps {
 }
 
 export const FontSizeProvider: React.FC<FontSizeProviderProps> = ({ children }) => {
-  const [fontScale, setFontScale] = useState<number>(1.3); // 기본값 1.1 (보통)
+  const [fontScale, setFontScale] = useState<number>(1.2); // 기본값 1.2 (보통)
 
   // 앱 시작 시 저장된 글자 크기 불러오기
   useEffect(() => {
@@ -35,9 +35,9 @@ export const FontSizeProvider: React.FC<FontSizeProviderProps> = ({ children }) 
 
   // scale을 API 형식으로 변환
   const scaleToApiSize = (scale: number): 'small' | 'medium' | 'large' => {
-    if (scale === 1.2) return 'small';
+    if (scale === 1.0) return 'small';
     if (scale === 1.4) return 'large';
-    return 'medium';
+    return 'medium'; // 1.2
   };
 
   const updateFontScale = async (scale: number): Promise<void> => {
