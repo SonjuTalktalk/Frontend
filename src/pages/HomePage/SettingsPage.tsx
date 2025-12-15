@@ -351,12 +351,14 @@ export default function SettingsPage() {
     );
   };
 
-  const getFontSizeLabel = () => {
-    if (fontScale === 0.9) return '작게';
-    if (fontScale === 1.0) return '보통';
-    if (fontScale === 1.1) return '크게';
-    return '보통';
-  };
+  // getFontSizeLabel 함수 수정
+    const getFontSizeLabel = () => {
+      if (fontScale === 1.0) return '작게';
+      if (fontScale === 1.2) return '보통';
+      if (fontScale === 1.4) return '크게';
+      return '보통';
+    };
+
 
   const getProfileImage = () => {
     return selectedProfile === '여성'
@@ -575,44 +577,44 @@ export default function SettingsPage() {
           </TouchableOpacity>
 
           {showFontSizeMenu && (
-            <View style={styles.fontSizeMenu}>
-              <TouchableOpacity
-                style={styles.fontSizeOption}
-                onPress={() => handleChangeFontSize(0.9)}
-              >
-                <ScaledText fontSize={16} style={styles.fontSizeLabel}>
-                  작게
-                </ScaledText>
-                {fontScale === 0.9 && (
-                  <Icon name="checkmark" size={20} color="#02BFDC" />
-                )}
-              </TouchableOpacity>
+              <View style={styles.fontSizeMenu}>
+                <TouchableOpacity
+                  style={styles.fontSizeOption}
+                  onPress={() => handleChangeFontSize(1.0)}
+                >
+                  <ScaledText fontSize={16} style={styles.fontSizeLabel}>
+                    작게
+                  </ScaledText>
+                  {fontScale === 1.0 && (
+                    <Icon name="checkmark" size={20} color="#02BFDC" />
+                  )}
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.fontSizeOption}
-                onPress={() => handleChangeFontSize(1.0)}
-              >
-                <ScaledText fontSize={16} style={styles.fontSizeLabel}>
-                  보통
-                </ScaledText>
-                {fontScale === 1.0 && (
-                  <Icon name="checkmark" size={20} color="#02BFDC" />
-                )}
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.fontSizeOption}
+                  onPress={() => handleChangeFontSize(1.2)}
+                >
+                  <ScaledText fontSize={16} style={styles.fontSizeLabel}>
+                    보통
+                  </ScaledText>
+                  {fontScale === 1.2 && (
+                    <Icon name="checkmark" size={20} color="#02BFDC" />
+                  )}
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.fontSizeOption}
-                onPress={() => handleChangeFontSize(1.1)}
-              >
-                <ScaledText fontSize={16} style={styles.fontSizeLabel}>
-                  크게
-                </ScaledText>
-                {fontScale === 1.1 && (
-                  <Icon name="checkmark" size={20} color="#02BFDC" />
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
+                <TouchableOpacity
+                  style={styles.fontSizeOption}
+                  onPress={() => handleChangeFontSize(1.4)}
+                >
+                  <ScaledText fontSize={16} style={styles.fontSizeLabel}>
+                    크게
+                  </ScaledText>
+                  {fontScale === 1.4 && (
+                    <Icon name="checkmark" size={20} color="#02BFDC" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
         </View>
 
         {/* 계정 섹션 */}

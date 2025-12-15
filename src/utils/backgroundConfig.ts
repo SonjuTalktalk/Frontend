@@ -13,9 +13,9 @@ export interface BackgroundItem {
 // 기본 배경 (구매 전)
 export const DEFAULT_BACKGROUNDS = {
   main: require('../../assets/images/background.png'),
-  main2: require('../../assets/images/background2.png'),
-  health: require('../../assets/images/healthbackground.jpg'),
-  health2: require('../../assets/images/background2.png'),
+  main2: require('../../assets/images/background.png'),
+  health: require('../../assets/images/healthbackground.png'),
+  health2: require('../../assets/images/background.png'),
 };
 
 // 구매 가능한 배경 목록
@@ -24,10 +24,10 @@ export const BACKGROUND_ITEMS: BackgroundItem[] = [
     id: 'background-1',
     name: '리본 배경',
     price: 30,
-    previewImageUrl: require('../../assets/images/리본배경.png'),
+    previewImageUrl: require('../../assets/images/background_ribbon.png'),
     backgroundNumber: 1,
-    mainBackground: require('../../assets/images/리본배경.png'),
-    healthBackground: require('../../assets/images/리본건강배경.png'),
+    mainBackground: require('../../assets/images/background_ribbon.png'),
+    healthBackground: require('../../assets/images/healthbackground.png'),
   },
   {
     id: 'background-2',
@@ -36,7 +36,7 @@ export const BACKGROUND_ITEMS: BackgroundItem[] = [
     previewImageUrl: require('../../assets/images/교실배경.png'),
     backgroundNumber: 2,
     mainBackground: require('../../assets/images/교실배경.png'),
-    healthBackground: require('../../assets/images/교실건강배경.png'),
+    healthBackground: require('../../assets/images/healthbackground.png'),
   },
   {
     id: 'background-3',
@@ -45,7 +45,7 @@ export const BACKGROUND_ITEMS: BackgroundItem[] = [
     previewImageUrl: require('../../assets/images/등산배경.png'),
     backgroundNumber: 3,
     mainBackground: require('../../assets/images/등산배경.png'),
-    healthBackground: require('../../assets/images/등산모자건강배경.png'),
+    healthBackground: require('../../assets/images/healthbackground.png'),
   },
   {
     id: 'background-4',
@@ -54,7 +54,7 @@ export const BACKGROUND_ITEMS: BackgroundItem[] = [
     previewImageUrl: require('../../assets/images/토끼머리띠배경.png'),
     backgroundNumber: 4,
     mainBackground: require('../../assets/images/토끼머리띠배경.png'),
-    healthBackground: require('../../assets/images/토끼머리띠건강배경.png'),
+    healthBackground: require('../../assets/images/healthbackground.png'),
   },
   {
     id: 'background-5',
@@ -63,7 +63,7 @@ export const BACKGROUND_ITEMS: BackgroundItem[] = [
     previewImageUrl: require('../../assets/images/마법사모자배경.png'),
     backgroundNumber: 5,
     mainBackground: require('../../assets/images/마법사모자배경.png'),
-    healthBackground: require('../../assets/images/마법사모자건강배경.png'),
+    healthBackground: require('../../assets/images/healthbackground.png'),
   },
   {
     id: 'background-6',
@@ -72,7 +72,7 @@ export const BACKGROUND_ITEMS: BackgroundItem[] = [
     previewImageUrl: require('../../assets/images/왕관배경.png'),
     backgroundNumber: 6,
     mainBackground: require('../../assets/images/왕관배경.png'),
-    healthBackground: require('../../assets/images/왕관건강배경.png'),
+    healthBackground: require('../../assets/images/healthbackground.png'),
   },
 ];
 

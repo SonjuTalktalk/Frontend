@@ -71,12 +71,6 @@ export default function HomePage({ navigation }: any) {
         style={styles.backgroundImage}
         resizeMode="cover"
       />
-      <Image
-        source={require('../../../assets/images/background2.png')}
-        style={styles.backgroundImage2}
-        resizeMode="cover"
-      />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* 퀵 메뉴 */}
         <View style={styles.quickMenuContainer}>
           {quickMenus.map((menu) => (
@@ -147,7 +141,6 @@ export default function HomePage({ navigation }: any) {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
 
       <View style={styles.leftButtonsContainer}>
         {/* 설정 버튼 */}

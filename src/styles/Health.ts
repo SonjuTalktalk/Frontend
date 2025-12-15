@@ -11,10 +11,10 @@ export const healthStyles = StyleSheet.create({
   // 배경 이미지
   backgroundImage: {
     position: 'absolute',
-    width: '100%',
+    width: '105%',
     height: 900,
     top: 0,
-    left: 0,
+    left: -5,
   },
   backgroundImage2: {
     position: 'absolute',
