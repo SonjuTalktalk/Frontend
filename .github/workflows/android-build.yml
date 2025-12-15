@@ -2,7 +2,7 @@ name: Android Build (Release)
 
 on:
   push:
-    branches: [ "main", "backup/local-2025-03-15" ] # <--- 이 부분이 수정되었습니다.
+    branches: [ "main", "backup/local-2025-03-15" ]
 
 jobs:
   build:
@@ -26,8 +26,8 @@ jobs:
 
       # 3. 라이브러리 설치
       - name: Install Dependencies
-        run: npm install
-
+        run: npm install --legacy-peer-deps # <--- ERESOLVE 에러 해결을 위해 수정된 부분
+        
       # 4. 자바 설정
       - name: Set up JDK 17
         uses: actions/setup-java@v4
