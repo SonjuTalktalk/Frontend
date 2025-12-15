@@ -1,7 +1,7 @@
 // src/components/chat/ChatBubble.tsx
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
-import Sound from 'react-native-sound';
+import SoundPlayer from 'react-native-sound-player';
 import ScaledText from '../ScaledText';
 import { Message } from '../../contexts/ChatContext';
 import { ttsService } from '../../services/ttsService';
@@ -14,28 +14,15 @@ interface ChatBubbleProps {
 /**
  * ✅ 조절 포인트
  * - AVATAR_SIZE: 버튼(동그라미) 크기
- * - IMAGE_SCALE: 버튼 안 이미지가 얼마나 꽉 차게 보일지(확대/축소)
+ * - AVATAR_GAP: 버튼과 텍스트 사이 간격
  */
 const AVATAR_SIZE = 55;
 const AVATAR_GAP = 10;
-const IMAGE_SCALE = 1;
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
   const isUser = message.role === 'user';
 
   const [isPlayingTTS, setIsPlayingTTS] = useState(false);
-  const [sound, setSound] = useState<Sound | null>(null);
-
-  const stopAndRelease = (s: Sound | null) => {
-    if (!s) return;
-    try {
-      s.stop(() => {
-        s.release();
-      });
-    } catch (e) {
-      // stop/release 중 예외가 나도 앱이 죽으면 안 됨
-    }
-  };
 
   /**
    * TTS 재생 핸들러
@@ -49,43 +36,15 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
     try {
       setIsPlayingTTS(true);
 
-      // 기존 사운드 정리
-      if (sound) {
-        stopAndRelease(sound);
-        setSound(null);
-      }
-
       // TTS API 호출
       const response = await ttsService.getTTS(chatListNum, message.chat_num);
       const ttsUrl = ttsService.getFullTTSUrl(response.tts_path);
 
       console.log('🔊 TTS 재생 시작:', ttsUrl);
 
-      // Sound 라이브러리 초기화
-      Sound.setCategory('Playback');
+      // URL에서 직접 재생
+      SoundPlayer.playUrl(ttsUrl);
 
-      const newSound = new Sound(ttsUrl, '', (error) => {
-        if (error) {
-          console.error('❌ 사운드 로드 실패:', error);
-          Alert.alert('오류', 'TTS 재생에 실패했습니다.');
-          setIsPlayingTTS(false);
-          return;
-        }
-
-        newSound.play((success) => {
-          if (success) {
-            console.log('✅ TTS 재생 완료');
-          } else {
-            console.error('❌ TTS 재생 실패');
-          }
-
-          setIsPlayingTTS(false);
-          newSound.release();
-          setSound(null);
-        });
-      });
-
-      setSound(newSound);
     } catch (error: any) {
       console.error('❌ TTS 재생 실패:', error);
       Alert.alert('오류', error?.message || 'TTS 재생에 실패했습니다.');
@@ -93,13 +52,31 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ message, chatListNum }) => {
     }
   };
 
-  // 컴포넌트 언마운트 시 사운드 정리
+  // 재생 완료 이벤트 리스너
   useEffect(() => {
+    const finishedSubscription = SoundPlayer.addEventListener('FinishedPlaying', ({ success }) => {
+      console.log('✅ TTS 재생 완료:', success);
+      setIsPlayingTTS(false);
+    });
+
+    const errorSubscription = SoundPlayer.addEventListener('FinishedPlayingError', (error) => {
+      console.error('❌ TTS 재생 에러:', error);
+      setIsPlayingTTS(false);
+    });
+
+    // 컴포넌트 언마운트 시 정리
     return () => {
-      stopAndRelease(sound);
+      finishedSubscription.remove();
+      errorSubscription.remove();
+
+      // 재생 중이던 사운드 정지
+      try {
+        SoundPlayer.stop();
+      } catch (e) {
+        // 정지 중 에러 무시
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sound]);
+  }, []);
 
   // USER 메시지
   if (isUser) {
@@ -234,7 +211,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#D9D9D9',
     overflow: 'hidden',
-    position: 'relative', // 기준점
+    position: 'relative',
   },
 
   avatarImage: {
