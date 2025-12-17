@@ -1,4 +1,4 @@
-// src/pages/ShopPage.tsx
+// src/pages/ShopPage.tsx 병합
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -14,8 +14,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScaledText from '../../components/ScaledText';
 import PageHeader from '../../components/common/PageHeader';
 import { usePoints } from '../../contexts/PointContext';
+import { usePremium } from '../../contexts/PremiumContext';
 import { shopAPI } from '../../services/shop';
 import { getCurrentBackgrounds, BACKGROUND_ITEMS } from '../../utils/backgroundConfig';
+import { createNotification } from '../../api/notificationApi';
 
 interface ShopItem {
   id: string;
@@ -79,6 +81,7 @@ const SHOP_ITEMS: ShopItem[] = [
 
 export default function ShopPage({ navigation }: any) {
   const { points, deductPoints, refreshPoints } = usePoints();
+  const { isPremium, refreshPremiumStatus } = usePremium();
   const [purchasedItems, setPurchasedItems] = useState<string[]>([]);
   const [equippedItems, setEquippedItems] = useState<{
     [key: string]: string;
@@ -105,18 +108,14 @@ export default function ShopPage({ navigation }: any) {
       loadEquippedBackground();
       loadBackground();
       refreshPoints();
+      refreshPremiumStatus();
     }, [])
   );
 
-  /**
-   * API에서 구매한 아이템 목록 불러오기
-   */
   const loadPurchasedItemsFromAPI = async () => {
     try {
       const response = await shopAPI.getBoughtItems();
 
-      // API 응답을 아이템 ID 배열로 변환
-      // item_number를 item_name(ID)으로 매핑
       const itemNumberToId: { [key: number]: string } = {
         1: 'ribbon',
         2: 'glasses',
@@ -128,47 +127,34 @@ export default function ShopPage({ navigation }: any) {
 
       const purchasedIds = response.result
         .map(item => itemNumberToId[item.item_number])
-        .filter(Boolean); // undefined 제거
+        .filter(Boolean);
 
       console.log('✅ 구매한 아이템:', purchasedIds);
 
       setPurchasedItems(purchasedIds);
-
-      // AsyncStorage에도 저장 (오프라인 지원)
       await AsyncStorage.setItem('purchasedItems', JSON.stringify(purchasedIds));
     } catch (error) {
       console.error('구매 내역 API 로드 실패:', error);
-      // API 실패 시 로컬 스토리지에서 로드
       await loadPurchasedItemsFromLocal();
     }
   };
 
-  /**
-   * API에서 구매한 배경 목록 불러오기
-   */
   const loadPurchasedBackgroundsFromAPI = async () => {
     try {
       const response = await shopAPI.getBoughtBackgrounds();
 
-      // API 응답을 배경 ID 배열로 변환
       const backgroundIds = response.result.map(bg => `background-${bg.background_number}`);
 
       console.log('✅ 구매한 배경:', backgroundIds);
 
       setPurchasedBackgrounds(backgroundIds);
-
-      // AsyncStorage에도 저장 (오프라인 지원)
       await AsyncStorage.setItem('purchasedBackgrounds', JSON.stringify(backgroundIds));
     } catch (error) {
       console.error('배경 구매 내역 API 로드 실패:', error);
-      // API 실패 시 로컬 스토리지에서 로드
       await loadPurchasedBackgroundsFromLocal();
     }
   };
 
-  /**
-   * 로컬 스토리지에서 구매한 아이템 불러오기 (폴백)
-   */
   const loadPurchasedItemsFromLocal = async () => {
     try {
       const saved = await AsyncStorage.getItem('purchasedItems');
@@ -180,9 +166,6 @@ export default function ShopPage({ navigation }: any) {
     }
   };
 
-  /**
-   * 로컬 스토리지에서 구매한 배경 불러오기 (폴백)
-   */
   const loadPurchasedBackgroundsFromLocal = async () => {
     try {
       const saved = await AsyncStorage.getItem('purchasedBackgrounds');
@@ -265,7 +248,7 @@ export default function ShopPage({ navigation }: any) {
 
     Alert.alert(
       '구매 확인',
-      `${item.name}을(를) ${item.price} 포인트에 구매하시겠습니까?`,
+      item.name + '을(를) ' + item.price + ' 포인트에 구매하시겠습니까?',
       [
         {
           text: '취소',
@@ -290,7 +273,13 @@ export default function ShopPage({ navigation }: any) {
 
               await refreshPoints();
 
-              Alert.alert('구매 완료', response.message || `${item.name}을(를) 구매했습니다!`);
+              // 🎯 알림 생성
+              await createNotification(
+                '아이템 구매 완료',
+                item.name + '을(를) 구매했습니다! 상점에서 착용해보세요.'
+              );
+
+              Alert.alert('구매 완료', response.message || item.name + '을(를) 구매했습니다!');
             } catch (error: any) {
               console.error('❌ 구매 실패:', error);
               Alert.alert(
@@ -307,6 +296,18 @@ export default function ShopPage({ navigation }: any) {
   };
 
   const handleBackgroundPurchase = async (background: typeof BACKGROUND_ITEMS[0]) => {
+    if (!isPremium) {
+      Alert.alert(
+        '프리미엄 전용',
+        '배경은 프리미엄 회원만 구매할 수 있습니다.\n프리미엄으로 업그레이드하시겠습니까?',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '업그레이드', onPress: () => navigation.navigate('Settings') }
+        ]
+      );
+      return;
+    }
+
     if (purchasedBackgrounds.includes(background.id)) {
       Alert.alert('알림', '이미 구매한 배경입니다.');
       return;
@@ -319,7 +320,7 @@ export default function ShopPage({ navigation }: any) {
 
     Alert.alert(
       '구매 확인',
-      `${background.name}을(를) ${background.price} 포인트에 구매하시겠습니까?`,
+      background.name + '을(를) ' + background.price + ' 포인트에 구매하시겠습니까?',
       [
         {
           text: '취소',
@@ -344,7 +345,13 @@ export default function ShopPage({ navigation }: any) {
 
               await refreshPoints();
 
-              Alert.alert('구매 완료', response.message || `${background.name}을(를) 구매했습니다!`);
+              // 🎯 알림 생성
+              await createNotification(
+                '배경 구매 완료',
+                background.name + '을(를) 구매했습니다! 상점에서 착용해보세요.'
+              );
+
+              Alert.alert('구매 완료', response.message || background.name + '을(를) 구매했습니다!');
             } catch (error: any) {
               console.error('❌ 배경 구매 실패:', error);
               Alert.alert(
@@ -415,7 +422,7 @@ export default function ShopPage({ navigation }: any) {
             JSON.stringify(newEquipped)
           );
 
-          Alert.alert('착용 완료', response.message || `아이템이 장착되었습니다!`);
+          Alert.alert('착용 완료', response.message || '아이템이 장착되었습니다!');
         } catch (error: any) {
           console.error('❌ 장착 실패:', error);
           Alert.alert(
@@ -455,8 +462,6 @@ export default function ShopPage({ navigation }: any) {
 
                   setEquippedBackground(backgroundId);
                   await AsyncStorage.setItem('equippedBackground', backgroundId);
-
-                  // 배경 즉시 변경
                   await loadBackground();
 
                   Alert.alert('착용 완료', response.message || '배경이 장착되었습니다!');
@@ -481,8 +486,6 @@ export default function ShopPage({ navigation }: any) {
 
           setEquippedBackground(backgroundId);
           await AsyncStorage.setItem('equippedBackground', backgroundId);
-
-          // 배경 즉시 변경
           await loadBackground();
 
           Alert.alert('착용 완료', response.message || '배경이 장착되었습니다!');
@@ -535,8 +538,6 @@ export default function ShopPage({ navigation }: any) {
 
       setEquippedBackground(null);
       await AsyncStorage.removeItem('equippedBackground');
-
-      // 배경 즉시 변경 (기본 배경으로)
       await loadBackground();
 
       Alert.alert('해제 완료', response.message || '배경을 해제했습니다.');
@@ -703,7 +704,6 @@ export default function ShopPage({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* 배경 이미지 - 동적으로 변경 */}
       <Image
         source={backgrounds.bg1}
         style={styles.backgroundImage}
@@ -779,7 +779,6 @@ export default function ShopPage({ navigation }: any) {
           </View>
         </View>
 
-        {/* 아이템 섹션 */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <ScaledText fontSize={24} style={styles.sectionHeaderTitle}>
@@ -800,26 +799,34 @@ export default function ShopPage({ navigation }: any) {
           </View>
         </View>
 
-        {/* 배경 섹션 */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <ScaledText fontSize={24} style={styles.sectionHeaderTitle}>
-              배경
-            </ScaledText>
-            <ScaledText fontSize={18} style={styles.sectionHeaderSubtitle}>
-              화면 배경을 변경해보세요
-            </ScaledText>
+        {isPremium && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <ScaledText fontSize={24} style={styles.sectionHeaderTitle}>
+                  배경
+                </ScaledText>
+                <View style={styles.premiumBadge}>
+                  <ScaledText fontSize={12} style={styles.premiumBadgeText}>
+                    PREMIUM
+                  </ScaledText>
+                </View>
+              </View>
+              <ScaledText fontSize={18} style={styles.sectionHeaderSubtitle}>
+                화면 배경을 변경해보세요
+              </ScaledText>
+            </View>
+            <View style={styles.itemGrid}>
+              {BACKGROUND_ITEMS.sort((a, b) => {
+                const aOwned = purchasedBackgrounds.includes(a.id);
+                const bOwned = purchasedBackgrounds.includes(b.id);
+                if (aOwned && !bOwned) return -1;
+                if (!aOwned && bOwned) return 1;
+                return 0;
+              }).map(background => renderBackgroundItem(background))}
+            </View>
           </View>
-          <View style={styles.itemGrid}>
-            {BACKGROUND_ITEMS.sort((a, b) => {
-              const aOwned = purchasedBackgrounds.includes(a.id);
-              const bOwned = purchasedBackgrounds.includes(b.id);
-              if (aOwned && !bOwned) return -1;
-              if (!aOwned && bOwned) return 1;
-              return 0;
-            }).map(background => renderBackgroundItem(background))}
-          </View>
-        </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -967,6 +974,17 @@ const styles = StyleSheet.create({
   sectionHeaderSubtitle: {
     fontFamily: 'Pretendard-Medium',
     color: '#6B7280',
+  },
+  premiumBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  premiumBadgeText: {
+    fontFamily: 'Pretendard-Bold',
+    color: '#1F2937',
+    fontSize: 10,
   },
   itemGrid: {
     flexDirection: 'row',
