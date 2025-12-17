@@ -7,7 +7,7 @@ export interface MedicineItem {
   medicine_name: string;
   medicine_daily: number;
   medicine_period: number;
-  medicine_date: string; // YYYY-MM-DD 형식
+  medicine_start_date: string; // YYYY-MM-DD 형식
 }
 
 // POST /health/medicine - 등록 요청
@@ -22,7 +22,7 @@ export interface CreateMedicineResponseItem {
   medicine_name: string;
   medicine_daily: number;
   medicine_period: number;
-  medicine_date: string;
+  medicine_start_date: string;
 }
 
 export interface CreateMedicineResponse {

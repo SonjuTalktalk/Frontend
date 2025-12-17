@@ -1,4 +1,4 @@
-// src/pages/HealthPage/HealthPage.tsx
+// src/pages/HealthPage/HealthPage.tsx 최종본
 import React, { useState } from 'react';
 import { View, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -87,7 +87,7 @@ export default function HealthPage() {
       // status도 로컬 스토리지에 저장
       const allStatusStored = await AsyncStorage.getItem(STATUS_STORAGE_KEY);
       const allStatuses = allStatusStored ? JSON.parse(allStatusStored) : {};
-      Object.assign(allStatuses, statuses);
+      Object.assign(allStatuses, validatedStatuses);
       await AsyncStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(allStatuses));
 
       console.log('✅ 서버 데이터로 업데이트 완료');

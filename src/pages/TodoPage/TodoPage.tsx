@@ -20,6 +20,7 @@ import { DateTimePicker } from './DateTimePicker';
 import { TodoSection } from './TodoSection';
 import { styles } from '../../styles/Todo';
 import { apiClient } from '../../api/config';
+import { createNotification } from '../../api/notificationApi';
 
 const TodoListApp = () => {
   const [todos, setTodos] = useState<TodoItem[]>([]);
@@ -53,7 +54,6 @@ const TodoListApp = () => {
 
   const loadTodos = async () => {
     try {
-      // 과거, 오늘, 미래, 완료된 할일들을 각각 가져옴
       const [pastRes, todayRes, futureRes, completedRes] = await Promise.all([
         apiClient.get<ApiTodo[]>('/todos/past'),
         apiClient.get<ApiTodo[]>('/todos/today'),
@@ -61,7 +61,6 @@ const TodoListApp = () => {
         apiClient.get<ApiTodo[]>('/todos/completed'),
       ]);
 
-      // 1. 모든 데이터를 하나로 합칩니다.
       const rawTodos = [
         ...pastRes.data,
         ...todayRes.data,
@@ -69,8 +68,6 @@ const TodoListApp = () => {
         ...completedRes.data
       ].map(apiTodoToTodoItem);
 
-      // 2. ✅ 중복 제거 로직 추가 (ID를 기준으로 중복을 걸러냅니다)
-      // Map은 키(Key)가 같으면 덮어쓰는 특성이 있어 ID 중복이 제거됩니다.
       const uniqueTodos = Array.from(
         new Map(rawTodos.map(item => [item.id, item])).values()
       );
@@ -99,10 +96,8 @@ const TodoListApp = () => {
   };
 
   const getSectionTitle = (todo: TodoItem): string => {
-    // 1) 완료된 할 일
     if (todo.completed) return '완료';
 
-    // 2) 날짜 기준 비교 (오늘 0시 기준)
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
@@ -112,13 +107,10 @@ const TodoListApp = () => {
     const diff = todoDate.getTime() - now.getTime();
 
     if (diff < 0) {
-      // 오늘보다 과거
       return '지난 할일';
     } else if (diff === 0) {
-      // 오늘
       return '오늘';
     } else {
-      // 미래
       return '미래 할일';
     }
   };
@@ -138,7 +130,6 @@ const TodoListApp = () => {
       }
     });
 
-    // 날짜순 정렬 (각 섹션 내에서)
     Object.keys(sections).forEach((key) => {
       sections[key].sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
     });
@@ -163,6 +154,12 @@ const TodoListApp = () => {
           due_date: dueDate,
           due_time: dueTime,
         });
+
+        // ✅ 알림 생성 (수정)
+        await createNotification(
+          '할일 수정됨',
+          `"${title.trim()}" 할일이 수정되었습니다`
+        );
       } else {
         // 추가
         await apiClient.post('/todos', {
@@ -170,6 +167,12 @@ const TodoListApp = () => {
           due_date: dueDate,
           due_time: dueTime,
         });
+
+        // ✅ 알림 생성 (추가)
+        await createNotification(
+          '새 할일 추가',
+          `"${title.trim()}" 할일이 추가되었습니다`
+        );
       }
 
       await loadTodos();
@@ -182,7 +185,17 @@ const TodoListApp = () => {
 
   const handleDeleteTodo = async (id: string) => {
     try {
+      const todoToDelete = todos.find(t => t.id === id);
       await apiClient.delete(`/todos/${id}`);
+
+      // ✅ 알림 생성 (삭제)
+      if (todoToDelete) {
+        await createNotification(
+          '할일 삭제됨',
+          `"${todoToDelete.title}" 할일이 삭제되었습니다`
+        );
+      }
+
       await loadTodos();
       resetModal();
     } catch (error) {
@@ -193,9 +206,21 @@ const TodoListApp = () => {
 
   const toggleTodo = async (id: string) => {
     try {
+      const todo = todos.find(t => t.id === id);
       await apiClient.patch('/todos/complete', {
         todo_nums: [parseInt(id)],
       });
+
+      // ✅ 알림 생성 (완료/미완료 토글)
+      if (todo) {
+        if (!todo.completed) {
+          await createNotification(
+            '할일 완료! 🎉',
+            `"${todo.title}" 할일을 완료했습니다`
+          );
+        }
+      }
+
       await loadTodos();
     } catch (error) {
       console.error('Failed to toggle todo:', error);
@@ -239,7 +264,6 @@ const TodoListApp = () => {
 
   const sections = groupTodosBySection();
   const writeButtonTranslate = buttonAnimation.interpolate({ inputRange: [0, 1], outputRange: [100, 0] });
-  // const voiceButtonTranslate = buttonAnimation.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }); // 사용하지 않는 변수는 주석 처리
 
   return (
     <SafeAreaView style={styles.container}>
@@ -256,10 +280,9 @@ const TodoListApp = () => {
         showsVerticalScrollIndicator={false}
         onTouchStart={() => showButtons && setShowButtons(false)}
       >
-        {/* 섹션 순서 지정 */}
         {['지난 할일', '오늘', '미래 할일', '완료'].map((sectionKey) => {
           const items = sections[sectionKey];
-          if (items.length === 0) return null; // 항목이 없으면 섹션 표시 안함
+          if (items.length === 0) return null;
 
           return (
             <TodoSection

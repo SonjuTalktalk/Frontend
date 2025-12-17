@@ -1,5 +1,5 @@
 // src/pages/Setting/SettingsPage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -12,7 +12,7 @@ import {
   Switch,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useFontSize } from '../../contexts/FontSizeContext';
 import ScaledText from '../../components/ScaledText';
@@ -30,7 +30,6 @@ import {
   initializeFCM,
   cleanupFCMToken,
   requestNotificationPermission,
-  checkNotificationPermission,
 } from '../../utils/fcm';
 
 export default function SettingsPage() {
@@ -49,20 +48,28 @@ export default function SettingsPage() {
   const [tempName, setTempName] = useState('');
   const [selectedProfile, setSelectedProfile] = useState<'여성' | '남성'>('여성');
 
-  useEffect(() => {
-    loadUserData();
-    loadNotificationStatus();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadUserData();
+      loadNotificationStatus();
+    }, [])
+  );
 
   const loadNotificationStatus = async () => {
     try {
-      const enabled = await AsyncStorage.getItem('notificationEnabled');
-      const hasPermission = await checkNotificationPermission();
+      console.log('🔄 [Settings] 알림 상태 로드 중...');
 
-      // 권한이 있고, 설정이 활성화된 경우에만 true
-      setNotificationEnabled(enabled === 'true' && hasPermission);
+      const enabled = await AsyncStorage.getItem('notificationEnabled');
+      console.log('📋 [Settings] 저장된 상태:', enabled);
+
+      // ✅ AsyncStorage 값만 신뢰 (Android에서 hasPermission이 정확하지 않음)
+      const finalState = enabled === 'true';
+
+      console.log('✅ [Settings] 최종 알림 상태:', finalState);
+      setNotificationEnabled(finalState);
     } catch (error) {
-      console.error('알림 상태 로드 실패:', error);
+      console.error('❌ [Settings] 알림 상태 로드 실패:', error);
+      setNotificationEnabled(false);
     }
   };
 
@@ -111,20 +118,19 @@ export default function SettingsPage() {
         // 알림 켜기
         console.log('📱 [Settings] 알림 활성화 시작');
 
-        const hasPermission = await checkNotificationPermission();
+        // 권한 요청
+        const granted = await requestNotificationPermission();
 
-        if (!hasPermission) {
-          // 권한이 없으면 권한 요청
-          const granted = await requestNotificationPermission();
-
-          if (!granted) {
-            Alert.alert(
-              '알림 권한 필요',
-              '알림을 받으시려면 설정에서 알림 권한을 허용해주세요.',
-              [{ text: '확인' }]
-            );
-            return;
-          }
+        if (!granted) {
+          Alert.alert(
+            '알림 권한 필요',
+            '알림을 받으시려면 설정에서 알림 권한을 허용해주세요.',
+            [{ text: '확인' }]
+          );
+          setNotificationEnabled(false);
+          await AsyncStorage.setItem('notificationEnabled', 'false');
+          setIsLoading(false);
+          return;
         }
 
         // FCM 초기화 및 토큰 등록
@@ -133,8 +139,12 @@ export default function SettingsPage() {
         if (initialized) {
           await AsyncStorage.setItem('notificationEnabled', 'true');
           setNotificationEnabled(true);
+          console.log('✅ [Settings] 알림 활성화 완료 및 상태 저장');
           Alert.alert('성공', '알림이 활성화되었습니다');
         } else {
+          await AsyncStorage.setItem('notificationEnabled', 'false');
+          setNotificationEnabled(false);
+          console.log('❌ [Settings] 알림 활성화 실패');
           Alert.alert('오류', '알림 설정에 실패했습니다');
         }
       } else {
@@ -144,10 +154,13 @@ export default function SettingsPage() {
         await cleanupFCMToken();
         await AsyncStorage.setItem('notificationEnabled', 'false');
         setNotificationEnabled(false);
+        console.log('✅ [Settings] 알림 비활성화 완료 및 상태 저장');
         Alert.alert('완료', '알림이 비활성화되었습니다');
       }
     } catch (error: any) {
       console.error('❌ [Settings] 알림 토글 실패:', error);
+      await AsyncStorage.setItem('notificationEnabled', 'false');
+      setNotificationEnabled(false);
       Alert.alert('오류', '알림 설정 변경에 실패했습니다');
     } finally {
       setIsLoading(false);
@@ -351,14 +364,12 @@ export default function SettingsPage() {
     );
   };
 
-  // getFontSizeLabel 함수 수정
-    const getFontSizeLabel = () => {
-      if (fontScale === 1.0) return '작게';
-      if (fontScale === 1.2) return '보통';
-      if (fontScale === 1.4) return '크게';
-      return '보통';
-    };
-
+  const getFontSizeLabel = () => {
+    if (fontScale === 1.0) return '작게';
+    if (fontScale === 1.2) return '보통';
+    if (fontScale === 1.4) return '크게';
+    return '보통';
+  };
 
   const getProfileImage = () => {
     return selectedProfile === '여성'
@@ -468,7 +479,7 @@ export default function SettingsPage() {
           </TouchableOpacity>
         </View>
 
-        {/* 알림 섹션 (새로 추가) */}
+        {/* 알림 섹션 */}
         <View style={styles.section}>
           <ScaledText fontSize={18} style={styles.sectionTitle}>
             알림
@@ -575,44 +586,44 @@ export default function SettingsPage() {
           </TouchableOpacity>
 
           {showFontSizeMenu && (
-              <View style={styles.fontSizeMenu}>
-                <TouchableOpacity
-                  style={styles.fontSizeOption}
-                  onPress={() => handleChangeFontSize(1.0)}
-                >
-                  <ScaledText fontSize={16} style={styles.fontSizeLabel}>
-                    작게
-                  </ScaledText>
-                  {fontScale === 1.0 && (
-                    <Icon name="checkmark" size={20} color="#02BFDC" />
-                  )}
-                </TouchableOpacity>
+            <View style={styles.fontSizeMenu}>
+              <TouchableOpacity
+                style={styles.fontSizeOption}
+                onPress={() => handleChangeFontSize(1.0)}
+              >
+                <ScaledText fontSize={16} style={styles.fontSizeLabel}>
+                  작게
+                </ScaledText>
+                {fontScale === 1.0 && (
+                  <Icon name="checkmark" size={20} color="#02BFDC" />
+                )}
+              </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.fontSizeOption}
-                  onPress={() => handleChangeFontSize(1.2)}
-                >
-                  <ScaledText fontSize={16} style={styles.fontSizeLabel}>
-                    보통
-                  </ScaledText>
-                  {fontScale === 1.2 && (
-                    <Icon name="checkmark" size={20} color="#02BFDC" />
-                  )}
-                </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.fontSizeOption}
+                onPress={() => handleChangeFontSize(1.2)}
+              >
+                <ScaledText fontSize={16} style={styles.fontSizeLabel}>
+                  보통
+                </ScaledText>
+                {fontScale === 1.2 && (
+                  <Icon name="checkmark" size={20} color="#02BFDC" />
+                )}
+              </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.fontSizeOption}
-                  onPress={() => handleChangeFontSize(1.4)}
-                >
-                  <ScaledText fontSize={16} style={styles.fontSizeLabel}>
-                    크게
-                  </ScaledText>
-                  {fontScale === 1.4 && (
-                    <Icon name="checkmark" size={20} color="#02BFDC" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
+              <TouchableOpacity
+                style={styles.fontSizeOption}
+                onPress={() => handleChangeFontSize(1.4)}
+              >
+                <ScaledText fontSize={16} style={styles.fontSizeLabel}>
+                  크게
+                </ScaledText>
+                {fontScale === 1.4 && (
+                  <Icon name="checkmark" size={20} color="#02BFDC" />
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* 계정 섹션 */}

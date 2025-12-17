@@ -1,4 +1,4 @@
-// src/pages/HealthPage/MedicationSettings.tsx
+// src/pages/HealthPage/MedicationSettings.tsx최종본
 import React, { useState } from 'react';
 import { View, ScrollView, Image, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -106,10 +106,10 @@ export default function MedicationSettings() {
     }
   };
 
-  // ✅ 서버에서 현재 날짜의 복약 데이터 가져오기
+  // ✅ fetchMedicationFromServer 함수 수정
   const fetchMedicationFromServer = async () => {
     try {
-      const dateKey = formatDateForDisplay(currentDate); // YYYY/MM/DD
+      const dateKey = formatDateForDisplay(currentDate);
       console.log('📥 서버에서 복약 데이터 조회:', dateKey);
 
       const medications = await getMedicineRoutinesByDate(dateKey);
@@ -117,13 +117,12 @@ export default function MedicationSettings() {
       if (medications.length > 0) {
         console.log('✅ 서버에서 받은 복약 데이터:', medications);
 
-        // 서버 데이터를 로컬 형식으로 변환
         const stored = await AsyncStorage.getItem(MEDICATION_STORAGE_KEY);
         const existingData = stored ? JSON.parse(stored) : {};
 
-        // 서버에서 받은 데이터로 해당 날짜의 복약 정보 재구성
         medications.forEach(med => {
-          const medDateKey = formatDate(parseDate(med.medicine_date.replace(/-/g, '/'))); // YYYY-MM-DD -> YYYY-MM-DD
+          // ✅ medicine_start_date로 수정
+          const medDateKey = formatDate(parseDate(med.medicine_start_date.replace(/-/g, '/')));
           const timeSlots = getTimeSlots(String(med.medicine_daily));
 
           if (!existingData[medDateKey]) {
@@ -142,10 +141,9 @@ export default function MedicationSettings() {
               existingData[medDateKey].push(targetSlot);
             }
 
-            // 중복 체크
             const exists = targetSlot.medications.some((m: MedicationItem) =>
               m.name === med.medicine_name &&
-              m.startDate === med.medicine_date.replace(/-/g, '/')
+              m.startDate === med.medicine_start_date.replace(/-/g, '/') // ✅ 수정
             );
 
             if (!exists) {
@@ -156,12 +154,11 @@ export default function MedicationSettings() {
                 checked: false,
                 frequency: String(med.medicine_daily),
                 days: String(med.medicine_period),
-                startDate: med.medicine_date.replace(/-/g, '/'), // YYYY-MM-DD -> YYYY/MM/DD
+                startDate: med.medicine_start_date.replace(/-/g, '/'), // ✅ 수정
               });
             }
           });
 
-          // 시간 순서대로 정렬
           existingData[medDateKey].sort((a: TimeSlot, b: TimeSlot) => {
             const timeOrder = ['오전 8시', '오후 12시', '오후 6시', '오후 10시'];
             return timeOrder.indexOf(a.time) - timeOrder.indexOf(b.time);
@@ -248,7 +245,7 @@ export default function MedicationSettings() {
               checked: false,
               frequency: String(med.medicine_daily),
               days: String(med.medicine_period),
-              startDate: med.medicine_date.replace(/-/g, '/'), // YYYY-MM-DD -> YYYY/MM/DD
+              startDate: med.medicine_start_date.replace(/-/g, '/'), // YYYY-MM-DD -> YYYY/MM/DD
             });
           });
 
