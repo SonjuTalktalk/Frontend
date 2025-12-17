@@ -1,11 +1,12 @@
 // src/pages/HealthPage/PrescriptionOCR.tsx
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Image, ActivityIndicator, Alert, Platform } from 'react-native';
+import { View, TouchableOpacity, Image, ActivityIndicator, Alert, Platform, PermissionsAndroid } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import ScaledText from '../../components/ScaledText';
 import { healthStyles } from '../../styles/Health';
 import { scanMedicineByOCR } from '../../api/medicineApi';
+
 
 type OCRStep = 'camera' | 'processing';
 
@@ -13,6 +14,29 @@ export default function PrescriptionOCR() {
   const navigation = useNavigation<any>();
   const [currentStep, setCurrentStep] = useState<OCRStep>('camera');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+
+  // ✅ 카메라 권한 요청 함수
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: '카메라 권한 요청',
+            message: '처방전 촬영을 위해 카메라 권한이 필요합니다.',
+            buttonNeutral: '나중에',
+            buttonNegative: '거부',
+            buttonPositive: '허용',
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true;
+  };
 
   const showImagePickerOptions = () => {
     Alert.alert(
@@ -31,6 +55,15 @@ export default function PrescriptionOCR() {
     try {
       console.log(`${type === 'camera' ? '카메라' : '갤러리'} 선택`);
 
+      // ✅ 카메라 사용 시 권한 체크
+      if (type === 'camera') {
+        const hasPermission = await requestCameraPermission();
+        if (!hasPermission) {
+          Alert.alert('권한 필요', '카메라 권한이 필요합니다.\n설정에서 권한을 허용해주세요.');
+          return;
+        }
+      }
+
       let result;
 
       if (type === 'camera') {
@@ -47,6 +80,7 @@ export default function PrescriptionOCR() {
           quality: 0.8,
           maxWidth: 2000,
           maxHeight: 2000,
+          presentationStyle: 'fullScreen',
         });
       }
 

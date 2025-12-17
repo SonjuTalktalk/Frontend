@@ -1,3 +1,5 @@
+// src/pages/TodoPage/TodoListApp.tsx
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -23,7 +25,7 @@ const TodoListApp = () => {
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [showButtons, setShowButtons] = useState(false);
 
-  // 할 일 추가 모달
+  // 할 일 추가 모달 상태
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingTodo, setEditingTodo] = useState<TodoItem | null>(null);
   const [title, setTitle] = useState('');
@@ -59,14 +61,21 @@ const TodoListApp = () => {
         apiClient.get<ApiTodo[]>('/todos/completed'),
       ]);
 
-      const allTodos = [
+      // 1. 모든 데이터를 하나로 합칩니다.
+      const rawTodos = [
         ...pastRes.data,
         ...todayRes.data,
         ...futureRes.data,
         ...completedRes.data
       ].map(apiTodoToTodoItem);
 
-      setTodos(allTodos);
+      // 2. ✅ 중복 제거 로직 추가 (ID를 기준으로 중복을 걸러냅니다)
+      // Map은 키(Key)가 같으면 덮어쓰는 특성이 있어 ID 중복이 제거됩니다.
+      const uniqueTodos = Array.from(
+        new Map(rawTodos.map(item => [item.id, item])).values()
+      );
+
+      setTodos(uniqueTodos);
     } catch (error) {
       console.error('Failed to load todos:', error);
       Alert.alert('오류', '할일을 불러오는데 실패했습니다.');
@@ -230,7 +239,7 @@ const TodoListApp = () => {
 
   const sections = groupTodosBySection();
   const writeButtonTranslate = buttonAnimation.interpolate({ inputRange: [0, 1], outputRange: [100, 0] });
-  const voiceButtonTranslate = buttonAnimation.interpolate({ inputRange: [0, 1], outputRange: [100, 0] });
+  // const voiceButtonTranslate = buttonAnimation.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }); // 사용하지 않는 변수는 주석 처리
 
   return (
     <SafeAreaView style={styles.container}>
