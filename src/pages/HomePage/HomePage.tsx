@@ -18,10 +18,8 @@ export default function HomePage({ navigation }: any) {
   const [equippedItems, setEquippedItems] = useState<EquippedItemsMap>({});
   const [backgrounds, setBackgrounds] = useState<{
       bg1: any;
-      bg2: any | null;
     }>({
       bg1: require('../../../assets/images/background.png'),
-      bg2: require('../../../assets/images/background2.png'),
     });
 
   const loadEquippedItems = async () => {
