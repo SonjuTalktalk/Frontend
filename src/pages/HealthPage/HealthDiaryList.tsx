@@ -1,4 +1,4 @@
-// src/pages/HealthPage/HealthDiaryList.tsx
+// src/pages/HealthPage/HealthDiaryList.tsx 최종본
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -49,7 +49,7 @@ export default function HealthDiaryList() {
       setIsLoading(true);
 
       // API에서 해당 월의 일지 가져오기
-      const memos = await getHealthMemosForMonth(currentYear, currentMonth);
+      const { memos } = await getHealthMemosForMonth(currentYear, currentMonth);
 
       // 배열로 변환 및 정렬
       const filtered = Object.entries(memos)
@@ -59,7 +59,7 @@ export default function HealthDiaryList() {
             ? (content.length > 20 ? content.substring(0, 20) + '...' : content)
             : '내용 없음'
         }))
-        .sort((a, b) => b.date.localeCompare(a.date)); // 최신순 정렬
+        .sort((a, b) => b.date.localeCompare(a.date));
 
       setEntries(filtered);
     } catch (error) {

@@ -1,4 +1,4 @@
-// src/api/healthApi.ts
+// src/api/healthApi.ts 최종본
 import { apiClient } from './config';
 
 export interface HealthMemoRequest {
@@ -39,19 +39,14 @@ export const saveHealthMemo = async (
  * 특정 날짜의 건강 일지 조회
  * GET /health/memos/date?requested_date=YYYY-MM-DD
  */
-export const getHealthMemo = async (requested_date: string): Promise<HealthMemoResponse | null> => {
+export const getHealthMemo = async (requested_date: string): Promise<string> => {
   try {
-    console.log(`🔍 일지 조회 시도: /health/memos/date?requested_date=${requested_date}`);
-
     const response = await apiClient.get<HealthMemoResponse>('/health/memos/date', {
       params: { requested_date },
     });
-
-    console.log(`✅ 건강 일지 조회 성공 (${requested_date}):`, response.data);
-    return response.data;
-  } catch (error: any) {
-    console.error('❌ 건강 일지 조회 실패:', error.response?.data || error.message);
-    return null;
+    return response.data?.memo_text ?? '';
+  } catch (error) {
+    return '';
   }
 };
 
@@ -73,7 +68,7 @@ export const getHealthMemosForMonth = async (
       params: { requested_month: monthStr },
     });
 
-    console.log(`📦 API 응답 받음:`, response.data);
+    console.log('📦 API 응답 받음:', response.data);
 
     const memos: { [key: string]: string } = {};
     const statuses: { [key: string]: string } = {};
@@ -100,6 +95,11 @@ export const getHealthMemosForMonth = async (
     }
 
     console.log(`✅ ${year}년 ${month}월 일지 조회 완료: ${Object.keys(memos).length}개`);
+    console.log(`✅ status 개수: ${Object.keys(statuses).length}개`);
+
+    // 디버깅: statuses 내용 확인
+    console.log('📊 받은 statuses:', statuses);
+
     return { memos, statuses };
   } catch (error: any) {
     console.error('❌ 월별 일지 조회 실패:', {

@@ -1,4 +1,4 @@
-// src/pages/HealthPage/PrescriptionOCR.tsx
+// src/pages/HealthPage/PrescriptionOCR.tsx최종본
 import React, { useState } from 'react';
 import { View, TouchableOpacity, Image, ActivityIndicator, Alert, Platform, PermissionsAndroid } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -146,7 +146,7 @@ export default function PrescriptionOCR() {
         name: item.medicine_name,
         frequency: String(item.medicine_daily),
         days: String(item.medicine_period),
-        startDate: item.medicine_date.replace(/-/g, '/'),
+        startDate: item.medicine_start_date.replace(/-/g, '/'),
       }));
 
       console.log('📋 변환된 결과:', ocrResults);

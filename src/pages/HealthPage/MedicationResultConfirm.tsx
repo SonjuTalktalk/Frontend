@@ -1,4 +1,4 @@
-// src/pages/HealthPage/MedicationResultConfirm.tsx
+// src/pages/HealthPage/MedicationResultConfirm.tsx 최종본
 import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -152,7 +152,7 @@ export default function MedicationResultConfirm() {
         medicine_name: med.name,
         medicine_daily: parseInt(med.frequency),
         medicine_period: parseInt(med.days),
-        medicine_date: convertDateToAPIFormat(med.startDate),
+        medicine_start_date: convertDateToAPIFormat(med.startDate),
       }));
 
       const response = await createMedicine(medicineItems);

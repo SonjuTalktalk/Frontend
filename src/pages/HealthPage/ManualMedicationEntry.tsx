@@ -1,4 +1,4 @@
-// src/pages/HealthPage/ManualMedicationEntry.tsx
+// src/pages/HealthPage/ManualMedicationEntry.tsx 최종본
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, Image, TextInput, Modal, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -95,7 +95,7 @@ export default function ManualMedicationEntry() {
         medicine_name: medicationName,
         medicine_daily: parseInt(frequency),
         medicine_period: parseInt(days),
-        medicine_date: apiDate,
+        medicine_start_date: apiDate,
       };
 
       const response = await createMedicine([medicineItem]);
