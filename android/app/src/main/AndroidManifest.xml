@@ -3,44 +3,37 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Android 12 이하용 저장소 권한 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
-    <!-- Android 13+ (API 33+)용 미디어 권한 -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
-    <!-- 카메라 기능 (선택사항) - required="false"로 설정 -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
-    <!-- ✅ queries는 application 밖에 위치 (하나로 합침) -->
     <queries>
         <intent>
             <action android:name="android.intent.action.GET_CONTENT" />
         </intent>
+
         <intent>
             <action android:name="android.intent.action.PICK" />
             <data android:mimeType="image/*" />
         </intent>
+
         <intent>
             <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
-        <intent>
-            <action android:name="android.intent.action.PICK" />
-            <data android:mimeType="image/*" />
-        </intent>
 
-        <!-- Google Photos 지원 추가 -->
         <package android:name="com.google.android.apps.photos" />
 
-        <!-- ✅ 카카오페이 앱 (여기에 추가) -->
         <package android:name="com.kakao.talk" />
 
-        <!-- ✅ 웹 브라우저 (여기에 추가) -->
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
