@@ -9,6 +9,7 @@ import { FontSizeProvider } from './contexts/FontSizeContext';
 import { ChatProvider } from './contexts/ChatContext';
 import { PointProvider } from './contexts/PointContext';
 import { MissionProvider } from './contexts/MissionContext';
+import { PremiumProvider } from './contexts/PremiumContext';  // ✅ 추가
 import { apiClient } from './api/config';
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -21,7 +22,7 @@ export default function App() {
       try {
         // accessToken 키로 통일 (userToken 사용 안 함)
         const token = await AsyncStorage.getItem('accessToken');
-        
+
         if (token) {
           // axios 기본 헤더에 토큰 설정
           apiClient.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -41,16 +42,18 @@ export default function App() {
     <SafeAreaProvider>
       <FontSizeProvider>
         <AuthProvider>
-          <ChatProvider>
-            <PointProvider>
-              <MissionProvider>
-                <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-                <NavigationContainer>
-                  <RootNavigator />
-                </NavigationContainer>
-              </MissionProvider>
-            </PointProvider>
-          </ChatProvider>
+          <PremiumProvider>  {/* ✅ 추가 */}
+            <ChatProvider>
+              <PointProvider>
+                <MissionProvider>
+                  <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+                  <NavigationContainer>
+                    <RootNavigator />
+                  </NavigationContainer>
+                </MissionProvider>
+              </PointProvider>
+            </ChatProvider>
+          </PremiumProvider>  {/* ✅ 추가 */}
         </AuthProvider>
       </FontSizeProvider>
     </SafeAreaProvider>

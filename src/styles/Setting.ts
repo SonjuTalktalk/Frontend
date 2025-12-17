@@ -1,3 +1,4 @@
+
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
@@ -16,12 +17,29 @@ export const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: 60,
     paddingBottom: 20,
   },
-  backButton: { padding: 4 },
-  headerTitle: { fontWeight: '600', color: '#000', paddingLeft: 140, paddingRight: 90 },
-  logoutButton: { color: '#02BFDC' },
+  backButton: {
+    padding: 8,
+    width: 40,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+  },
+  headerTitle: {
+    fontWeight: '600',
+    color: '#000',
+    flex: 1,
+    textAlign: 'center',
+  },
+  logoutButton: {
+    color: '#02BFDC',
+    minWidth: 70,
+    textAlign: 'right',
+  },
   content: { flex: 1, paddingHorizontal: 30 },
   profileImageContainer: { alignItems: 'center', marginBottom: 30, marginTop: 20 },
   profileImageWrapper: {
@@ -49,6 +67,12 @@ export const styles = StyleSheet.create({
   menuValue: { color: '#666' },
   menuRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   menuLink: { color: '#02BFDC' },
+  notificationDescription: {
+    color: '#999',
+    marginTop: 8,
+    paddingHorizontal: 4,
+    lineHeight: 18,
+  },
   fontSizeMenu: { marginTop: 8, backgroundColor: '#F8F8F8', borderRadius: 12, padding: 8 },
   fontSizeOption: {
     flexDirection: 'row',
@@ -87,30 +111,27 @@ export const styles = StyleSheet.create({
   modalButtonConfirm: { backgroundColor: '#02BFDC' },
   modalButtonTextCancel: { color: '#666', fontWeight: '600' },
   modalButtonTextConfirm: { color: '#fff', fontWeight: '600' },
-
-  // styles/Setting.ts에 추가
-    profileOption: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 16,
-      borderWidth: 2,
-      borderColor: '#E0E0E0',
-      borderRadius: 12,
-      gap: 12,
-    },
-    profileOptionSelected: {
-      borderColor: '#02BFDC',
-      backgroundColor: '#F0FBFD',
-    },
-    profileOptionImage: {
-      width: 60,
-      height: 60,
-      resizeMode: 'contain',
-    },
-    profileOptionText: {
-      flex: 1,
-      fontWeight: '600',
-      color: '#000',
-    },
-
+  profileOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    borderRadius: 12,
+    gap: 12,
+  },
+  profileOptionSelected: {
+    borderColor: '#02BFDC',
+    backgroundColor: '#F0FBFD',
+  },
+  profileOptionImage: {
+    width: 60,
+    height: 60,
+    resizeMode: 'contain',
+  },
+  profileOptionText: {
+    flex: 1,
+    fontWeight: '600',
+    color: '#000',
+  },
 });

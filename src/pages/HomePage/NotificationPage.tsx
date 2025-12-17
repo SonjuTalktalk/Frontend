@@ -1,4 +1,4 @@
-// src/pages/HomePage/NotificationPage.tsx
+// src/pages/HomePage/NotificationPage.tsx최종
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -18,7 +18,7 @@ import {
   formatNotificationTime,
   groupNotificationsByDate,
   NotificationItem
-} from '../../api/notificationApi.ts';
+} from '../../api/notificationApi';
 
 export default function NotificationPage() {
   const navigation = useNavigation();
@@ -37,7 +37,13 @@ export default function NotificationPage() {
     try {
       setIsLoading(true);
       const data = await getAllNotifications();
-      setNotifications(data);
+      // 최신 알림이 먼저 보이도록 정렬 (날짜 + 시간 기준 내림차순)
+      const sortedData = data.sort((a, b) => {
+        const dateTimeA = new Date(a.date + ' ' + a.time).getTime();
+        const dateTimeB = new Date(b.date + ' ' + b.time).getTime();
+        return dateTimeB - dateTimeA; // 내림차순 (최신순)
+      });
+      setNotifications(sortedData);
     } catch (error) {
       console.error('알림 로드 실패:', error);
     } finally {
@@ -65,7 +71,7 @@ export default function NotificationPage() {
               const result = await clearAllNotifications();
               if (result) {
                 setNotifications([]);
-                Alert.alert('완료', `${result.deleted}개의 알림이 삭제되었습니다`);
+                Alert.alert('완료', result.deleted + '개의 알림이 삭제되었습니다');
               }
             } catch (error) {
               console.error('알림 삭제 실패:', error);
@@ -80,8 +86,10 @@ export default function NotificationPage() {
   const getNotificationIcon = (title: string): string => {
     if (title.includes('복약') || title.includes('약')) return '💊';
     if (title.includes('할일') || title.includes('할 일')) return '✅';
-    if (title.includes('미션')) return '🎯';
+    if (title.includes('미션') || title.includes('챌린지')) return '🎯';
     if (title.includes('리포트')) return '📊';
+    if (title.includes('구매') || title.includes('아이템') || title.includes('배경')) return '🛍️';
+    if (title.includes('포인트') || title.includes('획득')) return '💰';
     return '🔔';
   };
 
@@ -234,7 +242,6 @@ const styles = StyleSheet.create({
     color: '#000000',
     flex: 1,
     textAlign: 'center',
-    marginRight: 32,
   },
   clearButton: {
     fontFamily: 'Pretendard-Medium',

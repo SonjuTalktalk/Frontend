@@ -1,4 +1,4 @@
-// src/pages/TodoPage/TodoListApp.tsx
+// src/pages/TodoPage/TodoListApp.tsx최종
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -13,7 +13,10 @@ import {
   Animated,
   Image,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import ScaledText from '../../components/ScaledText';
+import PageHeader from '../../components/common/PageHeader';
 import { useFontSize } from '../../contexts/FontSizeContext';
 import { TodoItem, ApiTodo } from './types';
 import { DateTimePicker } from './DateTimePicker';
@@ -23,6 +26,7 @@ import { apiClient } from '../../api/config';
 import { createNotification } from '../../api/notificationApi';
 
 const TodoListApp = () => {
+  const navigation = useNavigation();
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [showButtons, setShowButtons] = useState(false);
 
@@ -267,12 +271,12 @@ const TodoListApp = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <ScaledText fontSize={24} style={styles.title}>할 일</ScaledText>
-      </View>
-
-      <ScaledText fontSize={20} style={styles.subtitle}>목록을 적어 실천해요.</ScaledText>
+      {/* 헤더 - PageHeader 컴포넌트 사용 */}
+      <PageHeader
+        title="할 일"
+        onBack={() => navigation.goBack()}
+        safeArea={true}
+      />
 
       {/* 할 일 목록 */}
       <ScrollView
