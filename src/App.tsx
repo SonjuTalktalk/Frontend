@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
+// 1. DefaultTheme 추가 (라이트 모드 테마)
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import RootNavigator from './navigation/RootNavigator';
@@ -14,7 +15,9 @@ import { apiClient } from './api/config';
 import { AuthProvider } from './contexts/AuthContext';
 
 export default function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  // 2. 시스템 설정 무시하고 강제로 라이트 모드(false)로 고정
+  // const isDarkMode = useColorScheme() === 'dark'; 
+  const isDarkMode = false;
 
   // 앱 시작 시 저장된 accessToken을 불러와 axios 헤더에 설정
   useEffect(() => {
@@ -46,8 +49,13 @@ export default function App() {
             <ChatProvider>
               <PointProvider>
                 <MissionProvider>
-                  <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-                  <NavigationContainer>
+                  {/* 3. StatusBar도 항상 어두운 글자(dark-content)와 흰 배경으로 고정 */}
+                  <StatusBar 
+                    barStyle="dark-content" 
+                    backgroundColor="#ffffff" 
+                  />
+                  {/* 4. NavigationContainer에 theme={DefaultTheme} 추가하여 배경 흰색 고정 */}
+                  <NavigationContainer theme={DefaultTheme}>
                     <RootNavigator />
                   </NavigationContainer>
                 </MissionProvider>
